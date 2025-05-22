@@ -27,14 +27,33 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { Loader2, Upload, Save, Lock, User, Shield } from "lucide-react";
+import { Loader2, Upload, Save, Lock, User, Shield, Phone } from "lucide-react";
 import { useRoleCheck } from "@/hooks/useRoleCheck";
+import api from "@/utils/api";
+
+// Define user profile interface
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: string;
+  avatarUrl?: string;
+  // Define specific additional properties if needed
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 // Define the profile form schema
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  phone: z.string().optional(),
+  email: z.string().email({ message: "Please enter a valid email address" }).optional(),
+  phone: z.string()
+    .refine(val => !val || /^\+?[0-9]{10,15}$/.test(val.trim()), {
+      message: "Phone number must be valid (10-15 digits, optionally with + prefix)"
+    })
+    .transform(val => val ? val.trim() : val)
+    .optional(),
 });
 
 // Define the password form schema
@@ -56,20 +75,22 @@ const passwordFormSchema = z
   });
 
 export default function ProfilePage() {
-  const user = useSelector(selectCurrentUser);
+  const userFromStore = useSelector(selectCurrentUser);
   const { userRole } = useRoleCheck();
   const [activeTab, setActiveTab] = useState("profile");
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Create profile form
   const profileForm = useForm({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      name: user?.name || "",
-      email: user?.email || "",
+      name: "",
+      email: "",
       phone: "",
     },
   });
@@ -84,34 +105,105 @@ export default function ProfilePage() {
     },
   });
 
+  // Fetch user data from API
+  useEffect(() => {
+    const fetchUserData = async () => {
+      setIsLoading(true);
+      try {
+        const response = await api.get('/users/me');
+        const userData = response.data.data || response.data;
+        setUser(userData);
+        
+        // Reset form with fetched user data
+        profileForm.reset({
+          name: userData.name || "",
+          email: userData.email || "",
+          phone: userData.phone || "",
+        });
+
+        // Set avatar preview if available
+        if (userData.avatarUrl) {
+          setAvatarPreview(userData.avatarUrl);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        toast.error("Failed to load user profile");
+        
+        // Fallback to redux store data
+        if (userFromStore) {
+          setUser(userFromStore as UserProfile);
+          profileForm.reset({
+            name: userFromStore.name || "",
+            email: userFromStore.email || "",
+            phone: (userFromStore as UserProfile).phone || "",
+          });
+          
+          if (userFromStore.avatarUrl) {
+            setAvatarPreview(userFromStore.avatarUrl);
+          }
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [userFromStore, profileForm]);
+
   // Handle profile form submission
-  const onProfileSubmit = profileForm.handleSubmit(() => {
+  const onProfileSubmit = profileForm.handleSubmit((data) => {
     setIsUpdatingProfile(true);
 
-    // In a real app, this would be an API call
-    // api.put('/api/users/profile', data).then(...)
+    // Create update payload - exclude email as it's not allowed to be updated
+    const updatePayload = {
+      name: data.name,
+      phone: data.phone || null, // Send null if empty to clear the field
+    };
 
-    setTimeout(() => {
-      setIsUpdatingProfile(false);
-      toast.success("Profile updated successfully");
-
-      // Update the user in Redux store (this would normally be done via an action)
-      // dispatch(updateUserProfile(data));
-    }, 1000);
+    // Call the API to update user profile
+    api.patch('/users/me', updatePayload)
+      .then(response => {
+        setUser(response.data.data || response.data);
+        toast.success("Profile updated successfully");
+      })
+      .catch(error => {
+        console.error("Error updating profile:", error);
+        // Display specific validation errors if available
+        if (error.response?.data?.error?.message) {
+          const messages = Array.isArray(error.response.data.error.message) 
+            ? error.response.data.error.message 
+            : [error.response.data.error.message];
+          
+          messages.forEach((msg: string) => toast.error(msg));
+        } else {
+          toast.error("Failed to update profile");
+        }
+      })
+      .finally(() => {
+        setIsUpdatingProfile(false);
+      });
   });
 
   // Handle password form submission
-  const onPasswordSubmit = passwordForm.handleSubmit(() => {
+  const onPasswordSubmit = passwordForm.handleSubmit((data) => {
     setIsUpdatingPassword(true);
 
-    // In a real app, this would be an API call
-    // api.put('/api/users/password', data).then(...)
-
-    setTimeout(() => {
-      setIsUpdatingPassword(false);
-      toast.success("Password updated successfully");
-      passwordForm.reset();
-    }, 1000);
+    // Call the API to update password
+    api.put('/users/password', {
+      currentPassword: data.currentPassword,
+      newPassword: data.newPassword
+    })
+      .then(() => {
+        toast.success("Password updated successfully");
+        passwordForm.reset();
+      })
+      .catch(error => {
+        console.error("Error updating password:", error);
+        toast.error(error.response?.data?.message || "Failed to update password");
+      })
+      .finally(() => {
+        setIsUpdatingPassword(false);
+      });
   });
 
   // Handle avatar change
@@ -133,34 +225,27 @@ export default function ProfilePage() {
   const handleAvatarUpload = () => {
     if (!avatarFile) return;
 
-    // In a real app, this would be an API call with FormData
-    // const formData = new FormData();
-    // formData.append('avatar', avatarFile);
-    // api.post('/api/users/avatar', formData).then(...)
+    const formData = new FormData();
+    formData.append('avatar', avatarFile);
 
-    // For demo purposes, we'll just update the state in Redux
-    // This simulates a successful API response with the avatar URL
-    if (avatarPreview) {
-      // In a real app, dispatch an action to update the user profile
-      // dispatch(updateUserProfile({ avatarUrl: avatarPreview }));
-      
-      // For demo, we can store it in localStorage to persist between page refreshes
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        try {
-          const userData = JSON.parse(userStr);
-          userData.avatarUrl = avatarPreview;
-          localStorage.setItem('user', JSON.stringify(userData));
-        } catch (e) {
-          console.error('Error updating user avatar in localStorage', e);
-        }
+    api.post('/users/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
       }
-    }
-
-    toast.success("Avatar uploaded successfully");
-
-    // Reset the file input
-    setAvatarFile(null);
+    })
+      .then(response => {
+        const updatedUser = response.data.data || response.data;
+        setUser(prevUser => ({
+          ...prevUser!,
+          avatarUrl: updatedUser.avatarUrl
+        }));
+        toast.success("Avatar uploaded successfully");
+        setAvatarFile(null);
+      })
+      .catch(error => {
+        console.error("Error uploading avatar:", error);
+        toast.error("Failed to upload avatar");
+      });
   };
 
   // Get user initials for avatar fallback
@@ -177,8 +262,8 @@ export default function ProfilePage() {
   // Get role display name
   const getRoleDisplayName = (role: string) => {
     switch (role) {
-      case "super_admin":
-        return "Super Admin";
+      case "department_officer":
+        return "Department Officer";
       case "admin":
         return "Administrator";
       case "staff":
@@ -188,12 +273,15 @@ export default function ProfilePage() {
     }
   };
 
-  // Load avatar from user profile on component mount
-  useEffect(() => {
-    if (user?.avatarUrl) {
-      setAvatarPreview(user.avatarUrl);
-    }
-  }, [user]);
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading profile...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -246,10 +334,15 @@ export default function ProfilePage() {
               <div className="text-center">
                 <h3 className="font-medium text-lg">{user?.name}</h3>
                 <p className="text-sm text-muted-foreground">{user?.email}</p>
+                {user?.phone && (
+                  <p className="text-sm text-muted-foreground mt-1 flex items-center justify-center">
+                    <Phone className="h-3 w-3 mr-1" /> {user.phone}
+                  </p>
+                )}
                 <div className="mt-2">
                   <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
                     <Shield className="h-3 w-3 mr-1" />
-                    {getRoleDisplayName(userRole || "")}
+                    {getRoleDisplayName(user?.role || userRole || "")}
                   </span>
                 </div>
               </div>

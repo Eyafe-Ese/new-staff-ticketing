@@ -7,13 +7,28 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useRouter, useParams } from "next/navigation";
-import { Upload, X, Loader2, RefreshCw, ChevronLeft, ChevronRight, Download, Plus, FileText, File, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Loader2, RefreshCw, ChevronLeft, ChevronRight, Download, Plus, FileText, File, Image as ImageIcon, MessageCircle, Clock } from 'lucide-react';
 import { toast } from "sonner";
 import { useComplaint } from "@/hooks/useComplaint";
-import { useComplaintComments } from "@/hooks/useComplaintComments";
+import { useComplaintComments, useComplaintCommentsList } from "@/hooks/useComplaintComments";
 import { useComplaintAttachments } from "@/hooks/useComplaintAttachments";
 import Image from "next/image";
 import { Attachment } from "@/hooks/useComplaints";
+import { format } from 'date-fns';
+
+// Helper function to format dates consistently
+const formatDate = (date: string | Date) => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return format(dateObj, 'MMM d, yyyy h:mm a');
+};
+
+// Card header component with consistent styling
+const StyledCardHeader = ({ title, action }: { title: string, action?: React.ReactNode }) => (
+  <CardHeader className={`${action ? 'flex flex-row items-center justify-between' : ''} pb-2 sm:pb-4`}>
+    <CardTitle>{title}</CardTitle>
+    {action}
+  </CardHeader>
+);
 
 // Modal component for viewing attachments
 const AttachmentModal = ({ 
@@ -147,10 +162,10 @@ const AttachmentModal = ({
 };
 
 export default function TicketDetailPage() {
+  // State
   const [comment, setComment] = useState("");
   const [isDragging, setIsDragging] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [commentFiles, setCommentFiles] = useState<File[]>([]);
+  const [, setUploadError] = useState<string | null>(null);
   const [complaintFiles, setComplaintFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -158,39 +173,37 @@ export default function TicketDetailPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [currentAttachmentIndex, setCurrentAttachmentIndex] = useState(0);
-  const commentFileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Refs
   const complaintFileInputRef = useRef<HTMLInputElement>(null);
   
+  // Router
   const params = useParams();
   const ticketId = params.id as string;
   const router = useRouter();
 
-  // Fetch ticket data
+  // Data fetching
   const { complaint, isLoading, refetch } = useComplaint(ticketId);
-  
-  // Comment and attachment mutations
   const { 
-    addComment: { mutateAsync: addComment, isPending: isAddingComment }
-  } = useComplaintComments();
+    data: comments = [],
+    isLoading: isLoadingComments,
+    refetch: refetchComments
+  } = useComplaintCommentsList(ticketId);
+  
+  // Mutations
+  const { addComment: { mutateAsync: addComment, isPending: isAddingComment } } = useComplaintComments();
   const { 
     addAttachments: { mutateAsync: addAttachments, isPending: isAddingAttachments },
-    deleteAttachment: { mutateAsync: deleteAttachment, isPending: isDeletingComplaintAttachment }
+    deleteAttachment: { mutateAsync: deleteAttachment, isPending: isDeletingAttachment }
   } = useComplaintAttachments();
 
-  // Handle sidebar collapse state persistence
+  // Effect to handle sidebar collapse state
   useEffect(() => {
-    // Get the sidebar state from localStorage when component mounts
     const sidebarState = localStorage.getItem('sidebarCollapsed');
-    
-    // Apply the sidebar state to the DOM
-    if (sidebarState === 'true') {
-      document.body.classList.add('sidebar-collapsed');
-    } else {
-      document.body.classList.remove('sidebar-collapsed');
-    }
+    document.body.classList.toggle('sidebar-collapsed', sidebarState === 'true');
   }, []);
 
-  // Handle back button if complaint not found
+  // Effect to handle complaint not found
   useEffect(() => {
     if (!isLoading && !complaint) {
       toast.error("Ticket not found");
@@ -198,53 +211,11 @@ export default function TicketDetailPage() {
     }
   }, [isLoading, complaint, router]);
 
-  // Handle refresh
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      await refetch();
-      toast.success("Ticket refreshed");
-    } catch {
-      toast.error("Failed to refresh ticket");
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
-  // Open attachment modal
-  const openAttachmentModal = (index: number) => {
-    setCurrentAttachmentIndex(index);
-    setModalOpen(true);
-  };
-
-  // Function to get file icon based on filename
-  const getFileIcon = (filename: string) => {
-    if (filename.match(/\.(jpeg|jpg|gif|png|webp)$/i)) return <ImageIcon className="h-4 w-4" />;
-    if (filename.match(/\.(pdf)$/i)) return <FileText className="h-4 w-4" />;
-    return <File className="h-4 w-4" />;
-  };
-
-  // Navigate to next attachment
-  const nextAttachment = () => {
-    if (complaint?.attachments && currentAttachmentIndex < complaint.attachments.length - 1) {
-      setCurrentAttachmentIndex(currentAttachmentIndex + 1);
-    }
-  };
-
-  // Navigate to previous attachment
-  const prevAttachment = () => {
-    if (currentAttachmentIndex > 0) {
-      setCurrentAttachmentIndex(currentAttachmentIndex - 1);
-    }
-  };
-
-  // Handle upload progress with proper type
+  // File handling functions
   const handleUploadProgress = (progressEvent: { loaded: number; total: number }) => {
-    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-    setUploadProgress(percentCompleted);
+    setUploadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
   };
 
-  // Create validateFile with useCallback
   const validateFile = useCallback((file: File): boolean => {
     const validTypes = ['image/jpeg', 'image/png', 'video/mp4', 'application/pdf'];
     const maxSize = 25 * 1024 * 1024; // 25MB in bytes
@@ -262,49 +233,19 @@ export default function TicketDetailPage() {
     return true;
   }, []);
 
-  // Create handleFilesSelect with useCallback, dependent on validateFile
-  const handleFilesSelect = useCallback((filesToAdd: File[], forCommentSection: boolean = true) => {
+  const handleFilesSelect = useCallback((filesToAdd: File[]) => {
     setUploadError(null);
     
     const validFiles = filesToAdd.filter(file => validateFile(file));
     if (validFiles.length > 0) {
-      if (forCommentSection) {
-        setCommentFiles(prev => [...prev, ...validFiles]);
-      } else {
-        setComplaintFiles(prev => [...prev, ...validFiles]);
-      }
-      
-      if (validFiles.length === 1) {
-        toast.success('File selected successfully');
-      } else {
-        toast.success(`${validFiles.length} files selected successfully`);
-      }
+      setComplaintFiles(prev => [...prev, ...validFiles]);
+      toast.success(validFiles.length === 1 
+        ? 'File selected successfully' 
+        : `${validFiles.length} files selected successfully`);
     }
-  }, [validateFile, setUploadError, setCommentFiles, setComplaintFiles]);
+  }, [validateFile]);
 
-  // Fix useCallback dependencies
-  const handleComplaintDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    setUploadError(null);
-
-    const droppedFiles = Array.from(e.dataTransfer.files || []);
-    if (droppedFiles.length > 0) {
-      handleFilesSelect(droppedFiles, false);
-    }
-  }, [handleFilesSelect, setIsDragging, setUploadError]);
-
-  const handleCommentDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    setUploadError(null);
-
-    const droppedFiles = Array.from(e.dataTransfer.files || []);
-    if (droppedFiles.length > 0) {
-      handleFilesSelect(droppedFiles, true);
-    }
-  }, [handleFilesSelect, setIsDragging, setUploadError]);
-
+  // Drag and drop handlers
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -315,33 +256,28 @@ export default function TicketDetailPage() {
     setIsDragging(false);
   }, []);
 
-  const handleCommentFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length > 0) {
-      handleFilesSelect(files, true);
-    }
-  };
+  const handleComplaintDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    setUploadError(null);
 
+    const droppedFiles = Array.from(e.dataTransfer.files || []);
+    if (droppedFiles.length > 0) {
+      handleFilesSelect(droppedFiles);
+    }
+  }, [handleFilesSelect]);
+
+  // File input handler
   const handleComplaintFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
-      handleFilesSelect(files, false);
+      handleFilesSelect(files);
     }
   };
 
-  const handleRemoveFile = (index: number, forCommentSection: boolean = true) => {
-    if (forCommentSection) {
-      setCommentFiles(prev => prev.filter((_, i) => i !== index));
-    } else {
-      setComplaintFiles(prev => prev.filter((_, i) => i !== index));
-    }
-  };
-
-  const clearCommentFiles = () => {
-    setCommentFiles([]);
-    if (commentFileInputRef.current) {
-      commentFileInputRef.current.value = '';
-    }
+  // File actions
+  const handleRemoveFile = (index: number) => {
+    setComplaintFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const clearComplaintFiles = () => {
@@ -351,7 +287,44 @@ export default function TicketDetailPage() {
     }
   };
 
-  // Handle delete complaint attachment
+  // Attachment handlers
+  const openAttachmentModal = (index: number) => {
+    setCurrentAttachmentIndex(index);
+    setModalOpen(true);
+  };
+
+  const nextAttachment = () => {
+    if (complaint?.attachments && currentAttachmentIndex < complaint.attachments.length - 1) {
+      setCurrentAttachmentIndex(currentAttachmentIndex + 1);
+    }
+  };
+
+  const prevAttachment = () => {
+    if (currentAttachmentIndex > 0) {
+      setCurrentAttachmentIndex(currentAttachmentIndex - 1);
+    }
+  };
+
+  // Function to get file icon based on filename
+  const getFileIcon = (filename: string) => {
+    if (filename.match(/\.(jpeg|jpg|gif|png|webp)$/i)) return <ImageIcon className="h-4 w-4" />;
+    if (filename.match(/\.(pdf)$/i)) return <FileText className="h-4 w-4" />;
+    return <File className="h-4 w-4" />;
+  };
+
+  // API actions
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+      toast.success("Ticket refreshed");
+    } catch {
+      toast.error("Failed to refresh ticket");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const handleDeleteComplaintAttachment = async (attachmentId: string) => {
     if (!complaint || !attachmentId) return;
     
@@ -362,14 +335,13 @@ export default function TicketDetailPage() {
       });
       
       toast.success("Attachment removed successfully");
-      refetch(); // Refresh complaint data to update the UI
+      refetch();
     } catch (error) {
       console.error("Error deleting attachment:", error);
       toast.error("Failed to remove attachment. Please try again.");
     }
   };
 
-  // Upload files directly to complaint
   const handleUploadAttachments = async () => {
     if (!complaint || !complaintFiles.length || isAddingAttachments) return;
     
@@ -384,12 +356,8 @@ export default function TicketDetailPage() {
       });
       
       toast.success(`${complaintFiles.length} ${complaintFiles.length === 1 ? 'attachment' : 'attachments'} uploaded successfully`);
-      setComplaintFiles([]);
-      if (complaintFileInputRef.current) {
-        complaintFileInputRef.current.value = '';
-      }
-      
-      refetch(); // Refresh complaint data to show new attachments
+      clearComplaintFiles();
+      refetch();
     } catch (error) {
       console.error("Error uploading attachments:", error);
       toast.error("Failed to upload attachments. Please try again.");
@@ -399,41 +367,34 @@ export default function TicketDetailPage() {
     }
   };
 
-  // Handle post comment
   const handlePostComment = async () => {
     if (!complaint) return;
-    if ((!comment.trim() && commentFiles.length === 0) || isAddingComment) return;
+    if (!comment.trim() || isAddingComment) return;
     
     try {
       setIsSubmitting(true);
-      setUploadProgress(0);
       
       await addComment({
         complaintId: complaint.id,
         message: comment,
-        files: commentFiles.length > 0 ? commentFiles : undefined,
-        onUploadProgress: handleUploadProgress
+        isInternal: false
       });
       
-      if (commentFiles.length > 0) {
-        toast.success(`Comment posted with ${commentFiles.length} ${commentFiles.length === 1 ? 'attachment' : 'attachments'}`);
-      } else {
-        toast.success('Comment posted');
-      }
-      
+      toast.success('Comment posted');
       setComment("");
-      clearCommentFiles();
-      refetch(); // Refresh complaint data to show new comment
+      
+      // Refresh both complaint data and comments
+      refetch();
+      refetchComments();
     } catch (error) {
       console.error("Error posting comment:", error);
       toast.error("Failed to post comment. Please try again.");
     } finally {
       setIsSubmitting(false);
-      setUploadProgress(0);
     }
   };
 
-  // If loading, show loading spinner
+  // Loading state
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-20">
@@ -443,7 +404,7 @@ export default function TicketDetailPage() {
     );
   }
 
-  // If error or no complaint found
+  // Error state
   if (!complaint) {
     return (
       <div className="max-w-2xl mx-auto py-12">
@@ -459,6 +420,7 @@ export default function TicketDetailPage() {
     );
   }
 
+  // Main UI
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12 px-4 sm:px-6 lg:px-0">
       {/* Attachment Modal */}
@@ -476,14 +438,16 @@ export default function TicketDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 lg:gap-8">
         {/* LEFT: Main Ticket Content */}
         <div className="space-y-6">
-          {/* Breadcrumb */}
-          <nav className="text-sm text-muted-foreground flex items-center gap-2 mb-2" aria-label="Breadcrumb">
-            <Link href="/my-tickets" className="hover:underline">My Tickets</Link>
-            <span>/</span>
-            <span className="text-primary font-medium">#{complaint.id}</span>
-          </nav>
-          {/* Page Title */}
-          <h1 className="text-xl sm:text-2xl font-bold mb-2">Ticket #{complaint.id}</h1>
+          {/* Breadcrumb and Title */}
+          <div>
+            <nav className="text-sm text-muted-foreground flex items-center gap-2 mb-2" aria-label="Breadcrumb">
+              <Link href="/my-tickets" className="hover:underline">My Tickets</Link>
+              <span>/</span>
+              <span className="text-primary font-medium">Ticket #{complaint.id}</span>
+            </nav>
+            <h1 className="text-xl sm:text-2xl font-bold mb-2">Ticket #{complaint.id}</h1>
+          </div>
+          
           {/* Header Section */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-2">
             <div className="flex-1 min-w-0">
@@ -502,7 +466,7 @@ export default function TicketDetailPage() {
                 </span>
               </div>
               <div className="text-xs text-muted-foreground">
-                Created: {new Date(complaint.createdAt).toLocaleString()} &nbsp;|&nbsp; Last Updated: {new Date(complaint.updatedAt).toLocaleString()}
+                Created: {formatDate(complaint.createdAt)} | Last Updated: {formatDate(complaint.updatedAt)}
               </div>
               {complaint.isAnonymous && (
                 <div className="flex items-center gap-1 text-xs text-orange-600 mt-1">
@@ -510,57 +474,58 @@ export default function TicketDetailPage() {
                 </div>
               )}
             </div>
-            <div className="flex justify-end">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-              >
-                {isRefreshing ? (
-                  <>
-                    <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Refreshing...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="h-3 w-3 mr-1" /> Refresh
-                  </>
-                )}
-              </Button>
-            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+            >
+              {isRefreshing ? (
+                <>
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Refreshing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-3 w-3 mr-1" /> Refresh
+                </>
+              )}
+            </Button>
           </div>
+          
           {/* Reporter Info */}
           <div className="mb-2">
-            {complaint.isAnonymous ? (
-              <span className="text-xs text-muted-foreground">Reported Anonymously</span>
-            ) : (
-              <span className="text-xs text-muted-foreground">Reported by {complaint.reportedBy?.name || "Unknown"}</span>
-            )}
+            <span className="text-xs text-muted-foreground">
+              {complaint.isAnonymous 
+                ? "Reported Anonymously" 
+                : `Reported by ${complaint.reportedBy?.name || "Unknown"}`}
+            </span>
           </div>
+          
           {/* Description & Attachments */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
-              <CardHeader className="pb-2 sm:pb-4">
-                <CardTitle>Description</CardTitle>
-              </CardHeader>
+              <StyledCardHeader title="Description" />
               <CardContent>
                 <div className="whitespace-pre-line text-sm">{complaint.description}</div>
               </CardContent>
             </Card>
+            
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2 sm:pb-4">
-                <CardTitle>Attachments</CardTitle>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => complaintFileInputRef.current?.click()}
-                  disabled={isUploading || complaintFiles.length > 0}
-                  className="h-8 w-8 sm:h-auto sm:w-auto sm:px-3"
-                >
-                  <Plus className="h-4 w-4 sm:mr-1" />
-                  <span className="hidden sm:inline">Add</span>
-                </Button>
-              </CardHeader>
+              <StyledCardHeader 
+                title="Attachments" 
+                action={
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => complaintFileInputRef.current?.click()}
+                    disabled={isUploading || complaintFiles.length > 0}
+                    className="h-8 w-8 sm:h-auto sm:w-auto sm:px-3"
+                  >
+                    <Plus className="h-4 w-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Add</span>
+                  </Button>
+                }
+              />
               <CardContent>
                 {/* File input for complaint attachments */}
                 <input
@@ -593,7 +558,7 @@ export default function TicketDetailPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteComplaintAttachment(attachment.id)}
-                          disabled={isDeletingComplaintAttachment}
+                          disabled={isDeletingAttachment}
                           className="ml-2 h-8 w-8 p-0"
                         >
                           <X className="h-4 w-4" />
@@ -622,7 +587,7 @@ export default function TicketDetailPage() {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleRemoveFile(idx, false)}
+                            onClick={() => handleRemoveFile(idx)}
                             disabled={isUploading}
                             className="ml-2 h-8 w-8 p-0"
                           >
@@ -645,7 +610,7 @@ export default function TicketDetailPage() {
                       </div>
                     )}
 
-                    {/* Upload button */}
+                    {/* Upload buttons */}
                     <div className="flex flex-col sm:flex-row gap-2">
                       <Button
                         onClick={handleUploadAttachments}
@@ -699,14 +664,10 @@ export default function TicketDetailPage() {
               </CardContent>
             </Card>
           </div>
-        </div>
-        
-        {/* RIGHT: Ticket Info - moved below the main content on mobile */}
-        <div className="space-y-6 order-first lg:order-none mb-4 lg:mb-0">
+
+          {/* Ticket Information */}
           <Card>
-            <CardHeader className="pb-2 sm:pb-4">
-              <CardTitle>Ticket Information</CardTitle>
-            </CardHeader>
+            <StyledCardHeader title="Ticket Information" />
             <CardContent>
               <dl className="space-y-2">
                 <div className="grid grid-cols-[1fr_2fr] gap-1">
@@ -723,23 +684,19 @@ export default function TicketDetailPage() {
                 </div>
                 <div className="grid grid-cols-[1fr_2fr] gap-1">
                   <dt className="text-sm text-muted-foreground">Created</dt>
-                  <dd className="text-sm">{new Date(complaint.createdAt).toLocaleString()}</dd>
+                  <dd className="text-sm">{formatDate(complaint.createdAt)}</dd>
                 </div>
                 <div className="grid grid-cols-[1fr_2fr] gap-1">
                   <dt className="text-sm text-muted-foreground">Last Updated</dt>
-                  <dd className="text-sm">{new Date(complaint.updatedAt).toLocaleString()}</dd>
+                  <dd className="text-sm">{formatDate(complaint.updatedAt)}</dd>
                 </div>
                 <div className="grid grid-cols-[1fr_2fr] gap-1">
                   <dt className="text-sm text-muted-foreground">Category</dt>
-                  <dd className="text-sm">
-                    {complaint.categoryEntity?.name || "N/A"}
-                  </dd>
+                  <dd className="text-sm">{complaint.categoryEntity?.name || "N/A"}</dd>
                 </div>
                 <div className="grid grid-cols-[1fr_2fr] gap-1">
                   <dt className="text-sm text-muted-foreground">Department</dt>
-                  <dd className="text-sm">
-                    {complaint.department?.name || "N/A"}
-                  </dd>
+                  <dd className="text-sm">{complaint.department?.name || "N/A"}</dd>
                 </div>
                 <div className="grid grid-cols-[1fr_2fr] gap-1">
                   <dt className="text-sm text-muted-foreground">Anonymous</dt>
@@ -748,156 +705,133 @@ export default function TicketDetailPage() {
               </dl>
             </CardContent>
           </Card>
-          
+        </div>
+        
+        {/* RIGHT: Quick Actions and Timeline & Comments */}
+        <div className="space-y-6">
           {/* Quick Actions */}
           <Card>
-            <CardHeader className="pb-2 sm:pb-4">
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
+            <StyledCardHeader title="Quick Actions" />
             <CardContent className="space-y-2">
               <Button asChild variant="outline" className="w-full">
                 <Link href="/my-tickets">Back to All Tickets</Link>
               </Button>
             </CardContent>
           </Card>
+          
+          {/* Timeline & Comments */}
+          <Card>
+            <StyledCardHeader title="Timeline & Updates" />
+            <CardContent>
+              <>
+                {isLoadingComments ? (
+                  <div className="py-8 flex justify-center items-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+                    <span className="text-muted-foreground">Loading comments...</span>
+                  </div>
+                ) : comments.length === 0 ? (
+                  <div className="py-8 text-center text-muted-foreground">
+                    <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-20" />
+                    <p>No comments yet</p>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    {comments.length > 5 && (
+                      <div className="absolute right-0 top-2 z-10 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded-l-md">
+                        {comments.length} comments
+                      </div>
+                    )}
+                    <div className="max-h-[400px] overflow-y-auto pr-2 custom-scrollbar relative">
+                      <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-card to-transparent pointer-events-none opacity-50"></div>
+                      <ul className="space-y-6">
+                        {comments.map((comment) => (
+                        <li key={comment.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                              {comment.author.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
+                                <span className="font-medium text-sm">{comment.author.name}</span>
+                                <span className="text-xs text-muted-foreground flex items-center">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  {formatDate(comment.createdAt)}
+                                </span>
+                                <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                                  {comment.author.role}
+                                </span>
+                              </div>
+                              <div className="text-sm whitespace-pre-line">{comment.message}</div>
+                              
+                              {/* Comment Attachments */}
+                              {comment.attachments && comment.attachments.length > 0 && (
+                                <div className="mt-2">
+                                  <div className="text-xs font-medium text-muted-foreground mb-1">Attachments:</div>
+                                  <ul className="space-y-1">
+                                    {comment.attachments.map((attachment) => (
+                                      <li key={attachment.id} className="flex items-center text-xs">
+                                        <a 
+                                          href={attachment.url} 
+                                          target="_blank" 
+                                          rel="noreferrer"
+                                          className="flex items-center text-primary hover:underline"
+                                        >
+                                          {getFileIcon(attachment.filename)}
+                                          <span className="ml-1 truncate">{attachment.filename}</span>
+                                        </a>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Separator */}
+                <div className="border-t border-border my-6"></div>
+                
+                {/* Add Comment Form */}
+                <div>
+                  <h3 className="font-medium mb-2">Add Comment</h3>
+                  
+                  {/* Comment Input */}
+                  <Textarea
+                    placeholder="Type your comment here..."
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    rows={3}
+                    className="mb-4"
+                    disabled={isAddingComment}
+                  />
+                  
+                  {/* Loading indicator when submitting */}
+                  {isSubmitting && (
+                    <div className="flex items-center space-x-2 mb-4">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <span className="text-sm text-muted-foreground">Posting comment...</span>
+                    </div>
+                  )}
+                  
+                  {/* Submit Button */}
+                  <Button
+                    onClick={handlePostComment}
+                    className="w-full bg-primary text-white"
+                    disabled={!comment.trim() || isAddingComment}
+                  >
+                    Post Comment
+                  </Button>
+                </div>
+              </>
+            </CardContent>
+          </Card>
         </div>
       </div>
-      
-      {/* BOTTOM: Timeline & Comments - Always full width */}
-      <Card>
-        <CardHeader className="pb-2 sm:pb-4">
-          <CardTitle>Timeline & Updates</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-4">
-            {/* Timeline items here */}
-          </ul>
-          
-          {/* Separator */}
-          <div className="border-t border-border my-6"></div>
-          
-          {/* Add Comment Form */}
-          <div>
-            <h3 className="font-medium mb-2">Add Comment</h3>
-            
-            {/* Comment Input */}
-            <Textarea
-              placeholder="Type your comment here..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              rows={3}
-              className="mb-4"
-              disabled={isAddingComment}
-            />
-            
-            {/* File Upload Area */}
-            <div
-              className={`border-2 border-dashed rounded-md p-4 mb-4 text-center ${
-                isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/20'
-              }`}
-              onDrop={handleCommentDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-            >
-              <input
-                ref={commentFileInputRef}
-                type="file"
-                id="file-upload"
-                className="hidden"
-                onChange={handleCommentFileInput}
-                multiple
-                accept=".jpg,.jpeg,.png,.mp4,.pdf"
-                disabled={isAddingComment}
-              />
-              
-              <label
-                htmlFor="file-upload"
-                className="cursor-pointer flex flex-col items-center justify-center"
-              >
-                <Upload className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground mb-2" />
-                <span className="text-xs sm:text-sm text-primary font-medium">Click to upload or drag and drop</span>
-                <span className="text-xs text-muted-foreground mt-1">
-                  JPG, PNG, MP4, PDF up to 25MB
-                </span>
-              </label>
-            </div>
-            
-            {/* Upload Error */}
-            {uploadError && (
-              <div className="text-sm text-red-500 mb-4">
-                {uploadError}
-              </div>
-            )}
-            
-            {/* Selected Files */}
-            {commentFiles.length > 0 && (
-              <div className="mb-4">
-                <div className="text-sm font-medium mb-2">Selected Files:</div>
-                <ul className="space-y-2">
-                  {commentFiles.map((file, idx) => (
-                    <li key={idx} className="flex items-center justify-between p-2 rounded bg-muted/50">
-                      <div className="flex items-center gap-2 overflow-hidden">
-                        <span className="text-xs font-mono truncate">{file.name}</span>
-                        <span className="text-xs text-muted-foreground">
-                          ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                        </span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveFile(idx, true)}
-                        disabled={isAddingComment}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={clearCommentFiles}
-                  className="mt-2"
-                  disabled={isAddingComment}
-                >
-                  Clear All
-                </Button>
-              </div>
-            )}
-            
-            {/* Upload Progress */}
-            {isSubmitting && uploadProgress > 0 && uploadProgress < 100 && (
-              <div className="mb-4">
-                <div className="text-sm font-medium mb-1">Uploading: {uploadProgress}%</div>
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div 
-                    className="bg-primary h-2 rounded-full" 
-                    style={{ width: `${uploadProgress}%` }}
-                  ></div>
-                </div>
-              </div>
-            )}
-            
-            {/* Submit Button */}
-            <Button
-              onClick={handlePostComment}
-              className="w-full bg-primary text-white"
-              disabled={(!comment.trim() && commentFiles.length === 0) || isAddingComment}
-            >
-              {isAddingComment ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                  Posting Comment...
-                </>
-              ) : (
-                'Post Comment'
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 } 
