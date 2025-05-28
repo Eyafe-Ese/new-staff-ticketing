@@ -29,7 +29,6 @@ import {
   FileText,
   Image as ImageIcon,
   Upload,
-  MessageCircle,
 } from "lucide-react";
 import { useComplaintByToken } from "@/hooks/useComplaintByToken";
 import {
@@ -42,7 +41,6 @@ import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import Image from "next/image";
 import { Attachment } from "@/hooks/useComplaints";
-import { useComplaintAttachments } from "@/hooks/useComplaintAttachments";
 
 // Modal component for viewing attachments
 const AttachmentModal = ({
@@ -191,15 +189,11 @@ export default function TrackComplaintPage() {
 
   // New state for comment form
   const [comment, setComment] = useState("");
-  const [isDragging, setIsDragging] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [, setIsDragging] = useState(false);
+  const [, setUploadError] = useState<string | null>(null);
   const [commentFiles, setCommentFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-
-  // Refs
-  const commentFileInputRef = useRef<HTMLInputElement>(null);
 
   // Only fetch data if a token is submitted
   const {
@@ -532,7 +526,7 @@ export default function TrackComplaintPage() {
                       {complaint.title || complaint.subject}
                     </h3>
                     <div className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary font-medium">
-                      {complaint.statusEntity?.name || 'Unknown'}
+                      {complaint.statusEntity?.name || "Unknown"}
                     </div>
                   </div>
                   <p className="text-xs sm:text-sm text-muted-foreground">
