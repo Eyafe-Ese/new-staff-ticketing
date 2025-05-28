@@ -3,13 +3,13 @@ import api from "../utils/api";
 import { RootState } from "./index";
 
 // Define user roles
-export type UserRole = "staff" | "department_officer" | "admin";
+export type UserRole = "staff" | "it_officer" | "hr_admin";
 
 // Define the role hierarchy (higher roles have more permissions)
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
   staff: 1,
-  department_officer: 2,
-  admin: 3,
+  it_officer: 2,
+  hr_admin: 3,
 };
 
 interface AuthState {
@@ -253,11 +253,11 @@ export const hasRole = (state: RootState, requiredRole: UserRole): boolean => {
 };
 
 export const isAdmin = (state: RootState): boolean => {
-  return hasRole(state, "admin");
+  return hasRole(state, "hr_admin");
 };
 
 export const isDepartmentOfficer = (state: RootState): boolean => {
-  return hasRole(state, "department_officer");
+  return hasRole(state, "it_officer");
 };
 
 export default authSlice.reducer;

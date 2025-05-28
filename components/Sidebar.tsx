@@ -36,28 +36,46 @@ const navItems = [
     minRole: 'staff' as UserRole,
   },
   {
-    title: 'Tickets',
-    href: '/tickets',
+    title: 'IT Tickets',
+    href: '/it-tickets',
     icon: Package,
-    minRole: 'department_officer' as UserRole,
+    minRole: 'it_officer' as UserRole,
+    subItems: [
+      {
+        title: 'All Tickets',
+        href: '/it-tickets',
+      },
+      {
+        title: 'Assigned to Me',
+        href: '/it-tickets?assigned=me',
+      },
+      {
+        title: 'New Tickets',
+        href: '/it-tickets?status=new',
+      },
+      {
+        title: 'In Progress',
+        href: '/it-tickets?status=in_progress',
+      },
+    ],
   },
   {
     title: 'Reports',
     href: '/reports',
     icon: BarChart,
-    minRole: 'department_officer' as UserRole,
+    minRole: 'it_officer' as UserRole,
   },
   {
     title: 'Users',
     href: '/users',
     icon: Users,
-    minRole: 'admin' as UserRole,
+    minRole: 'hr_admin' as UserRole,
   },
   {
     title: 'Settings',
     href: '/settings',
     icon: Settings,
-    minRole: 'admin' as UserRole,
+    minRole: 'hr_admin' as UserRole,
   },
 ];
 

@@ -22,17 +22,17 @@ export function useRoleCheck() {
   };
 
   /**
-   * Check if the current user has admin role
+   * Check if the current user has HR admin role
    */
-  const isAdmin = (): boolean => {
-    return hasRole('admin');
+  const isHRAdmin = (): boolean => {
+    return hasRole('hr_admin');
   };
 
   /**
-   * Check if the current user has super admin role
+   * Check if the current user has IT officer role
    */
-  const isDepartmentOfficer = (): boolean => {
-    return hasRole('department_officer');
+  const isITOfficer = (): boolean => {
+    return hasRole('it_officer');
   };
 
   /**
@@ -46,8 +46,8 @@ export function useRoleCheck() {
     userRole,
     isAuthenticated,
     hasRole,
-    isAdmin,
-    isDepartmentOfficer,
+    isHRAdmin,
+    isITOfficer,
     isStaffOrHigher
   };
 } 

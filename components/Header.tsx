@@ -63,7 +63,7 @@ export function Header({
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const currentUser = useSelector(selectCurrentUser);
-  const { userRole, isAdmin, isDepartmentOfficer } = useRoleCheck();
+  const { userRole, isHRAdmin, isITOfficer } = useRoleCheck();
 
   // Get page title based on current path
   const getPageTitle = () => {
@@ -92,8 +92,8 @@ export function Header({
   };
 
   const getRoleBadgeColor = () => {
-    if (isDepartmentOfficer()) return 'bg-purple-100 text-purple-800';
-    if (isAdmin()) return 'bg-blue-100 text-blue-800';
+    if (isITOfficer()) return 'bg-purple-100 text-purple-800';
+    if (isHRAdmin()) return 'bg-blue-100 text-blue-800';
     return 'bg-gray-100 text-gray-800';
   };
 
@@ -127,7 +127,7 @@ export function Header({
   const unreadCount = notifications.filter(notification => !notification.read).length;
 
   // Check if user has access to settings
-  const canAccessSettings = isAdmin() || isDepartmentOfficer();
+  const canAccessSettings = isHRAdmin() || isITOfficer();
 
   return (
     <header className="border-b bg-white">

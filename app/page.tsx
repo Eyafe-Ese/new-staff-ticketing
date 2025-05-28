@@ -290,8 +290,8 @@ export default function DashboardPage() {
     );
   }
 
-  // DEPARTMENT OFFICER VIEW
-  if (userRole === "department_officer") {
+  // IT OFFICER VIEW
+  if (userRole === "it_officer") {
     const {
       stats,
       ticketsOverTime,
@@ -304,73 +304,74 @@ export default function DashboardPage() {
     if (isLoading) return <LoadingState />;
     if (isError) return <ErrorState />;
 
-  return (
-    <div className="space-y-6">
+    return (
+      <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-2">
           <div className="flex flex-wrap gap-2">
             <Button asChild className="bg-primary text-white">
-              <Link href="/tickets/new">New Complaint</Link>
+              <Link href="/it-tickets">View IT Tickets</Link>
             </Button>
-            <Link href="/tickets?scope=dept&assigned=me" className="text-primary underline self-center font-medium">Assigned Tickets</Link>
-            <Link href="/tickets?scope=dept" className="text-primary underline self-center font-medium">Dept Queue</Link>
+            <Link href="/it-tickets?assigned=me" className="text-primary underline self-center font-medium">My Assigned Tickets</Link>
+            <Link href="/it-tickets?status=new" className="text-primary underline self-center font-medium">New Tickets</Link>
+            <Link href="/reports" className="text-primary underline self-center font-medium">IT Reports</Link>
           </div>
-      </div>
-        <p className="text-muted-foreground">Overview of your department&apos;s complaints and assignments.</p>
+        </div>
+        <p className="text-muted-foreground">Overview of IT department complaints and assignments.</p>
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4">
-            <Card>
+          <Card>
             <CardHeader>
               <CardTitle>Dept Open Tickets</CardTitle>
               <CardDescription>New & In Progress</CardDescription>
-              </CardHeader>
-              <CardContent>
+            </CardHeader>
+            <CardContent>
               <div className="text-2xl font-bold text-primary">{stats?.open || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
+            </CardContent>
+          </Card>
+          <Card>
             <CardHeader>
               <CardTitle>Dept Resolved Tickets</CardTitle>
-              </CardHeader>
-              <CardContent>
+            </CardHeader>
+            <CardContent>
               <div className="text-2xl font-bold text-primary">{stats?.resolved || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
+            </CardContent>
+          </Card>
+          <Card>
             <CardHeader>
               <CardTitle>My Open Tickets</CardTitle>
-              </CardHeader>
-              <CardContent>
+            </CardHeader>
+            <CardContent>
               <div className="text-2xl font-bold text-primary">{stats?.myOpen || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
+            </CardContent>
+          </Card>
+          <Card>
             <CardHeader>
               <CardTitle>My Resolved Tickets</CardTitle>
-              </CardHeader>
-              <CardContent>
+            </CardHeader>
+            <CardContent>
               <div className="text-2xl font-bold text-primary">{stats?.myResolved || 0}</div>
-              </CardContent>
-            </Card>
-          </div>
+            </CardContent>
+          </Card>
+        </div>
         {/* Charts */}
         <div className="grid gap-4 md:grid-cols-2">
           <Card>
-              <CardHeader>
+            <CardHeader>
               <CardTitle>Dept Tickets Over Time</CardTitle>
-              </CardHeader>
-              <CardContent>
+            </CardHeader>
+            <CardContent>
               <LineChart data={ticketsOverTime} />
-              </CardContent>
-            </Card>
+            </CardContent>
+          </Card>
           <Card>
-              <CardHeader>
+            <CardHeader>
               <CardTitle>Dept Tickets by Category</CardTitle>
-              </CardHeader>
-              <CardContent>
+            </CardHeader>
+            <CardContent>
               <PieChart data={ticketsByCategory} />
             </CardContent>
           </Card>
-                    </div>
+        </div>
         <Card>
           <CardHeader>
             <CardTitle>Latest Activity</CardTitle>
@@ -393,12 +394,12 @@ export default function DashboardPage() {
             </ul>
           </CardContent>
         </Card>
-                    </div>
+      </div>
     );
   }
 
-  // ADMIN / HR VIEW
-  if (userRole === "admin") {
+  // HR ADMIN VIEW
+  if (userRole === "hr_admin") {
     const {
       stats,
       ticketsOverTime,
@@ -419,10 +420,11 @@ export default function DashboardPage() {
               <Link href="/tickets/new">New Complaint</Link>
             </Button>
             <Link href="/tickets?scope=global" className="text-primary underline self-center font-medium">All Tickets</Link>
-            <Link href="/reports" className="text-primary underline self-center font-medium">Reports</Link>
-                    </div>
-                  </div>
-        <p className="text-muted-foreground">Overview of all complaints and users.</p>
+            <Link href="/users" className="text-primary underline self-center font-medium">Manage Users</Link>
+            <Link href="/reports" className="text-primary underline self-center font-medium">HR Reports</Link>
+          </div>
+        </div>
+        <p className="text-muted-foreground">Overview of all complaints and users across the organization.</p>
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
@@ -456,9 +458,9 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-primary">{stats?.users || 0}</div>
-              </CardContent>
-            </Card>
-          </div>
+            </CardContent>
+          </Card>
+        </div>
         {/* Charts */}
         <div className="grid gap-4 md:grid-cols-2">
           <Card>
