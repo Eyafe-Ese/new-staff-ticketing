@@ -73,6 +73,40 @@ interface StatsData {
   assignedToMe: number;
 }
 
+// Add these type definitions at the top with other interfaces
+interface ActivityData {
+  type: string;
+  user: string;
+  subject: string;
+  time: string;
+  color: string;
+  icon: string;
+  comment?: string;
+  status?: string;
+}
+
+interface TicketTimeData {
+  date: string;
+  tickets: number;
+}
+
+interface TicketCategoryData {
+  category: string;
+  count: number;
+}
+
+interface DepartmentData {
+  department: string;
+  count: number;
+}
+
+interface AdminStats {
+  open: number;
+  resolved: number;
+  anonymous: number;
+  users: number;
+}
+
 // Add back the chart components and loading states
 function LineChart({ data }: { data: LineChartItem[] }) {
   return (
@@ -181,7 +215,7 @@ export default function DashboardPage() {
   );
 
   // STAFF VIEW
-  if (userRole === "staff") {
+  if (userRole === "staff" && staffDashboard) {
     const { 
       stats, 
       ticketsOverTime, 
@@ -272,7 +306,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <ul className="divide-y divide-gray-100">
-                  {latestActivity.slice(0, 3).map((activity, idx) => (
+                  {latestActivity.slice(0, 3).map((activity: ActivityData, idx: number) => (
                     <li key={idx} className="flex items-center gap-2 py-2">
                       <span className="text-lg sm:text-xl" style={{ color: activity.color }}>{activity.icon}</span>
                       <div className="flex-1 min-w-0">
@@ -304,7 +338,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <ul className="divide-y divide-gray-100">
-              {latestActivity.map((activity, idx) => (
+              {latestActivity.map((activity: ActivityData, idx: number) => (
                 <li key={idx} className="flex items-center gap-3 py-2">
                   <span className="text-xl" style={{ color: activity.color }}>{activity.icon}</span>
                   <div className="flex-1">
@@ -529,7 +563,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <ul className="divide-y divide-gray-100">
-                  {recentActivity.slice(0, 5).map((activity, idx) => (
+                  {recentActivity.slice(0, 5).map((activity: ActivityData, idx: number) => (
                     <li key={idx} className="flex items-center gap-2 py-2">
                       <span className="text-lg sm:text-xl" style={{ color: activity.color }}>{activity.icon}</span>
                       <div className="flex-1 min-w-0">
@@ -565,7 +599,7 @@ export default function DashboardPage() {
   }
 
   // HR ADMIN VIEW
-  if (userRole === "hr_admin") {
+  if (userRole === "hr_admin" && adminDashboard) {
     const {
       stats,
       ticketsOverTime,
@@ -652,7 +686,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <ul className="divide-y divide-gray-100">
-              {latestActivity.map((activity, idx) => (
+              {latestActivity.map((activity: ActivityData, idx: number) => (
                 <li key={idx} className="flex items-center gap-3 py-2">
                   <span className="text-xl" style={{ color: activity.color }}>{activity.icon}</span>
                   <div className="flex-1">
