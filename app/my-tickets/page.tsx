@@ -94,7 +94,7 @@ export default function MyTicketsPage() {
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
                 {Array.isArray(complaintCategories) && complaintCategories.map(cat => (
-                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                  <SelectItem key={cat.id} value={cat.id}>{cat.type.toUpperCase()}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

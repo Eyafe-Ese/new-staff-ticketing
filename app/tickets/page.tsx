@@ -108,7 +108,7 @@ export default function TicketsPage() {
               <SelectContent>
                 <SelectItem value="All">All</SelectItem>
                 {complaintCategories.map(cat => (
-                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                  <SelectItem key={cat.id} value={cat.id}>{cat.type.toUpperCase()}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

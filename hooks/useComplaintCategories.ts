@@ -3,18 +3,14 @@ import api from '@/utils/api';
 
 export interface ComplaintCategory {
   id: string;
-  name: string;
-  description?: string;
+  createdAt: string;
+  updatedAt: string;
+  type: string;
+  isActive: boolean;
 }
 
 export interface ComplaintCategoriesResponse {
   data: ComplaintCategory[];
-  meta?: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
   timestamp: string;
 }
 
@@ -35,7 +31,6 @@ export function useComplaintCategories() {
 
   return {
     complaintCategories: data?.data || [],
-    meta: data?.meta,
     isLoading,
     isError,
     error

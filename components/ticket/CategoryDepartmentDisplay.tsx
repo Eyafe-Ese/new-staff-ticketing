@@ -26,7 +26,7 @@ export function CategoryDepartmentDisplay({
     <span className="flex items-center gap-1">
       <span className={labelClassName}>Category:</span> 
       <span className={valueClassName}>
-        {categoriesLoading ? "Loading..." : category?.name || categoryId}
+        {categoriesLoading ? "Loading..." : category?.type ? category.type.toUpperCase() : categoryId}
       </span>
       <span className="mx-2">•</span>
       <span className={labelClassName}>Dept:</span> 

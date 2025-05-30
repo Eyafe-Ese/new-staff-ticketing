@@ -552,7 +552,7 @@ export default function TrackComplaintPage() {
                           Category
                         </div>
                         <div className="text-sm font-medium">
-                          {complaint.categoryEntity?.name || "Unknown"}
+                          {complaint.categoryEntity?.type ? complaint.categoryEntity.type.toUpperCase() : "Unknown"}
                         </div>
                       </div>
                     </div>

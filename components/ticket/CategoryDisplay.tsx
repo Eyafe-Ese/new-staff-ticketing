@@ -22,7 +22,7 @@ export function CategoryDisplay({
   
   return (
     <span className={className}>
-      {category?.name || categoryId}
+      {category?.type ? category.type.toUpperCase() : categoryId}
     </span>
   );
 } 

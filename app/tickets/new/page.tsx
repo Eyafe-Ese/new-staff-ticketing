@@ -310,7 +310,7 @@ export default function NewTicketPage() {
                         <SelectContent>
                           {complaintCategories.map(category => (
                             <SelectItem key={category.id} value={category.id}>
-                              {category.name}
+                              {category.type.toUpperCase()}
                             </SelectItem>
                           ))}
                         </SelectContent>
