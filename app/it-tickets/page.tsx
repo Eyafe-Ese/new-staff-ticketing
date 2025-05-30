@@ -9,9 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RoleProtectedRoute } from '@/components/RoleProtectedRoute';
-import { useComplaintCategories } from '@/hooks/useComplaintCategories';
 import { useComplaintStatuses } from '@/hooks/useComplaintStatuses';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/utils/api';
 
@@ -66,22 +65,16 @@ export default function ITTicketsPage() {
   const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [statusId, setStatusId] = useState("all");
-  const [categoryId, setCategoryId] = useState("all");
-  const [page, setPage] = useState(1);
-  
-  // Fetch categories from API
-  const { complaintCategories, isLoading: categoriesLoading } = useComplaintCategories();
   
   // Fetch statuses from API
   const { complaintStatuses, isLoading: statusesLoading } = useComplaintStatuses();
   
   // Fetch tickets based on filters
   const { data: tickets, isLoading, isError, refetch } = useQuery({
-    queryKey: ['it-tickets', statusId, categoryId, search],
+    queryKey: ['it-tickets', statusId, search],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (statusId !== 'all') params.append('statusId', statusId);
-      if (categoryId !== 'all') params.append('categoryId', categoryId);
       if (search) params.append('search', search);
       
       const response = await api.get(`/complaints/it${params.toString() ? `?${params.toString()}` : ''}`);
@@ -92,12 +85,11 @@ export default function ITTicketsPage() {
   // Auto-apply filters when they change
   useEffect(() => {
     refetch();
-  }, [statusId, categoryId, search, refetch]);
+  }, [statusId, search, refetch]);
 
   // Handle clear filters
   const handleClearFilters = () => {
     setStatusId("all");
-    setCategoryId("all");
     setSearch("");
   };
 
@@ -136,20 +128,6 @@ export default function ITTicketsPage() {
                   <SelectItem value="all">All Statuses</SelectItem>
                   {Array.isArray(complaintStatuses) && complaintStatuses.map((status: { id: string; name: string }) => (
                     <SelectItem key={status.id} value={status.id}>{status.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="w-[140px]">
-              <label className="block text-xs mb-1">Category</label>
-              <Select value={categoryId} onValueChange={setCategoryId}>
-                <SelectTrigger>
-                  <SelectValue placeholder={categoriesLoading ? "Loading..." : "All Categories"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {Array.isArray(complaintCategories) && complaintCategories.map((cat: { id: string; type: string }) => (
-                    <SelectItem key={cat.id} value={cat.id}>{cat.type.toUpperCase()}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
