@@ -451,14 +451,14 @@ export default function TicketDetailPage() {
           {/* Header Section */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-2">
             <div className="flex-1 min-w-0">
-              <div className="text-lg sm:text-xl font-bold mb-1 truncate">{complaint.title || complaint.subject}</div>
+              <div className="text-lg sm:text-xl font-bold mb-1 truncate max-w-[600px]">{complaint.title || complaint.subject}</div>
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <span className={`px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary`}>
                   {complaint.statusEntity?.name || complaint.status}
                 </span>
                 <span className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
                   <span>Category:</span> <span className="font-medium">
-                    {complaint.categoryEntity?.name || "N/A"}
+                    {complaint.categoryEntity?.type ? complaint.categoryEntity.type.toUpperCase() : "N/A"}
                   </span>
                   <span className="ml-2">Dept:</span> <span className="font-medium">
                     {complaint.department?.name || "N/A"}
@@ -692,7 +692,7 @@ export default function TicketDetailPage() {
                 </div>
                 <div className="grid grid-cols-[1fr_2fr] gap-1">
                   <dt className="text-sm text-muted-foreground">Category</dt>
-                  <dd className="text-sm">{complaint.categoryEntity?.name || "N/A"}</dd>
+                  <dd className="text-sm">{complaint.categoryEntity?.type ? complaint.categoryEntity.type.toUpperCase() : "N/A"}</dd>
                 </div>
                 <div className="grid grid-cols-[1fr_2fr] gap-1">
                   <dt className="text-sm text-muted-foreground">Department</dt>
