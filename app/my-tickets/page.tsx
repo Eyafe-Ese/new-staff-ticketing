@@ -34,7 +34,7 @@ export default function MyTicketsPage() {
 
   // Auto-apply filters when they change
   useEffect(() => {
-    setPage(1); // Reset to first page when filters change
+    setPage(1);
     refetch();
   }, [statusId, categoryId, search, refetch]);
 
@@ -70,11 +70,20 @@ export default function MyTicketsPage() {
       </div>
       {/* Filter Bar */}
       <Card className="mb-4">
-        <CardContent className="flex flex-wrap gap-4 py-4 items-end">
-          <div>
+        <CardContent className="flex flex-wrap gap-3 py-2 items-end">
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-xs mb-1">Search</label>
+            <Input 
+              value={search} 
+              onChange={e => setSearch(e.target.value)} 
+              placeholder="Search by ID or subject" 
+              className="w-full"
+            />
+          </div>
+          <div className="w-[140px]">
             <label className="block text-xs mb-1">Status</label>
             <Select value={statusId} onValueChange={setStatusId}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger>
                 <SelectValue placeholder={statusesLoading ? "Loading..." : "All Statuses"} />
               </SelectTrigger>
               <SelectContent>
@@ -85,10 +94,10 @@ export default function MyTicketsPage() {
               </SelectContent>
             </Select>
           </div>
-          <div>
+          <div className="w-[140px]">
             <label className="block text-xs mb-1">Category</label>
             <Select value={categoryId} onValueChange={setCategoryId}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger>
                 <SelectValue placeholder={categoriesLoading ? "Loading..." : "All Categories"} />
               </SelectTrigger>
               <SelectContent>
@@ -99,16 +108,7 @@ export default function MyTicketsPage() {
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <label className="block text-xs mb-1">Search</label>
-            <Input 
-              value={search} 
-              onChange={e => setSearch(e.target.value)} 
-              placeholder="ID or subject" 
-              className="w-40"
-            />
-          </div>
-          <Button variant="outline" onClick={handleClearFilters}>Clear Filters</Button>
+          <Button variant="outline" size="sm" onClick={handleClearFilters}>Clear Filters</Button>
         </CardContent>
       </Card>
       {/* Table */}
@@ -133,12 +133,12 @@ export default function MyTicketsPage() {
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="bg-gray-50">
-                  <th className="p-2 text-left">Ticket ID</th>
-                  <th className="p-2 text-left">Title</th>
-                  <th className="p-2 text-left">Category</th>
-                  <th className="p-2 text-left">Department</th>
-                  <th className="p-2 text-left">Status</th>
-                  <th className="p-2 text-left">Updated At</th>
+                  <th className="p-3 text-left">Ticket ID</th>
+                  <th className="p-3 text-left w-[300px]">Title</th>
+                  <th className="p-3 text-left w-[150px]">Category</th>
+                  <th className="p-3 text-left w-[150px]">Department</th>
+                  <th className="p-3 text-left">Status</th>
+                  <th className="p-3 text-left">Updated At</th>
                 </tr>
               </thead>
               <tbody>
@@ -148,20 +148,22 @@ export default function MyTicketsPage() {
                     className="border-b hover:bg-gray-50 cursor-pointer"
                     onClick={() => window.location.href = `/my-tickets/${complaint.id}`}
                   >
-                    <td className="p-2 font-mono">{complaint.id}</td>
-                    <td className="p-2">{complaint.title || complaint.subject}</td>
-                    <td className="p-2">
-                      {complaint.categoryEntity?.name || 'N/A'}
+                    <td className="p-3 font-mono">{complaint.id}</td>
+                    <td className="p-3 max-w-[300px] truncate" title={complaint.title || complaint.subject}>
+                      {complaint.title || complaint.subject}
                     </td>
-                    <td className="p-2">
+                    <td className="p-3 max-w-[150px] truncate" title={complaint.categoryEntity?.type?.toUpperCase() || 'N/A'}>
+                      {complaint.categoryEntity?.type?.toUpperCase() || 'N/A'}
+                    </td>
+                    <td className="p-3 max-w-[150px] truncate" title={complaint.department?.name || 'N/A'}>
                       {complaint.department?.name || 'N/A'}
                     </td>
-                    <td className="p-2">
+                    <td className="p-3">
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
                         {complaint.statusEntity?.name || complaint.status}
                       </span>
                     </td>
-                    <td className="p-2">{new Date(complaint.updatedAt).toLocaleDateString()}</td>
+                    <td className="p-3">{new Date(complaint.updatedAt).toLocaleDateString()}</td>
                   </tr>
                 ))}
               </tbody>

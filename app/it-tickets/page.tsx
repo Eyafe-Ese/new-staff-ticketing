@@ -1,17 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DataTable } from '@/components/ui/data-table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RoleProtectedRoute } from '@/components/RoleProtectedRoute';
-import { useRoleCheck } from '@/hooks/useRoleCheck';
-import { Loader2, Search, Filter, PlusCircle } from 'lucide-react';
+import { useComplaintCategories } from '@/hooks/useComplaintCategories';
+import { useComplaintStatuses } from '@/hooks/useComplaintStatuses';
+import { Loader2, Search } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/utils/api';
 
@@ -33,6 +33,17 @@ interface Ticket {
     id: string;
     name: string;
   };
+  statusEntity?: {
+    code: string;
+    name: string;
+  };
+  priorityEntity?: {
+    code: string;
+    name: string;
+  };
+  categoryEntity?: {
+    type: string;
+  };
 }
 
 // Define ticket status options
@@ -53,93 +64,45 @@ const priorityOptions = [
 
 export default function ITTicketsPage() {
   const searchParams = useSearchParams();
-  const { userRole } = useRoleCheck();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
-  const [priorityFilter, setPriorityFilter] = useState('');
-  const [assignedFilter, setAssignedFilter] = useState(searchParams.get('assigned') || '');
-
+  const [search, setSearch] = useState("");
+  const [statusId, setStatusId] = useState("all");
+  const [categoryId, setCategoryId] = useState("all");
+  const [page, setPage] = useState(1);
+  
+  // Fetch categories from API
+  const { complaintCategories, isLoading: categoriesLoading } = useComplaintCategories();
+  
+  // Fetch statuses from API
+  const { complaintStatuses, isLoading: statusesLoading } = useComplaintStatuses();
+  
   // Fetch tickets based on filters
-  const { data: tickets, isLoading, isError } = useQuery({
-    queryKey: ['it-tickets', statusFilter, priorityFilter, assignedFilter],
+  const { data: tickets, isLoading, isError, refetch } = useQuery({
+    queryKey: ['it-tickets', statusId, categoryId, search],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (statusFilter) params.append('status', statusFilter);
-      if (priorityFilter) params.append('priority', priorityFilter);
-      if (assignedFilter === 'me') params.append('assignedTo', 'me');
+      if (statusId !== 'all') params.append('statusId', statusId);
+      if (categoryId !== 'all') params.append('categoryId', categoryId);
+      if (search) params.append('search', search);
       
-      const response = await api.get(`/tickets/it?${params.toString()}`);
-      return response.data.data;
+      const response = await api.get(`/complaints/it${params.toString() ? `?${params.toString()}` : ''}`);
+      return response.data;
     },
   });
 
-  // Define columns for the tickets table
-  const columns = [
-    { key: 'title', title: 'Title' },
-    { 
-      key: 'status', 
-      title: 'Status',
-      render: (ticket: Ticket) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          ticket.status === 'new' ? 'bg-blue-100 text-blue-800' :
-          ticket.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
-          ticket.status === 'resolved' ? 'bg-green-100 text-green-800' :
-          'bg-gray-100 text-gray-800'
-        }`}>
-          {statusOptions.find(s => s.value === ticket.status)?.label || ticket.status}
-        </span>
-      )
-    },
-    { 
-      key: 'priority', 
-      title: 'Priority',
-      render: (ticket: Ticket) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          ticket.priority === 'urgent' ? 'bg-red-100 text-red-800' :
-          ticket.priority === 'high' ? 'bg-orange-100 text-orange-800' :
-          ticket.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-          'bg-green-100 text-green-800'
-        }`}>
-          {priorityOptions.find(p => p.value === ticket.priority)?.label || ticket.priority}
-        </span>
-      )
-    },
-    { key: 'category', title: 'Category' },
-    { 
-      key: 'assignedTo', 
-      title: 'Assigned To',
-      render: (ticket: Ticket) => ticket.assignedTo?.name || 'Unassigned'
-    },
-    { 
-      key: 'createdAt', 
-      title: 'Created',
-      render: (ticket: Ticket) => new Date(ticket.createdAt).toLocaleDateString()
-    },
-    {
-      key: 'actions',
-      title: 'Actions',
-      render: (ticket: Ticket) => (
-        <div className="flex justify-end space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            asChild
-          >
-            <Link href={`/it-tickets/${ticket.id}`}>
-              View Details
-            </Link>
-          </Button>
-        </div>
-      )
-    },
-  ];
+  // Auto-apply filters when they change
+  useEffect(() => {
+    refetch();
+  }, [statusId, categoryId, search, refetch]);
 
-  // Filter tickets based on search query
-  const filteredTickets = tickets?.filter((ticket: Ticket) => 
-    ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    ticket.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    ticket.category.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  // Handle clear filters
+  const handleClearFilters = () => {
+    setStatusId("all");
+    setCategoryId("all");
+    setSearch("");
+  };
+
+  // Get current page data
+  const currentData = tickets?.data || [];
 
   return (
     <RoleProtectedRoute requiredRole="it_officer" fallbackPath="/">
@@ -152,79 +115,137 @@ export default function ITTicketsPage() {
         </div>
 
         {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Filters</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-4">
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search tickets..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Card className="mb-4">
+          <CardContent className="flex flex-wrap gap-3 py-2 items-end">
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-xs mb-1">Search</label>
+              <Input 
+                value={search} 
+                onChange={e => setSearch(e.target.value)} 
+                placeholder="Search by ID or subject" 
+                className="w-full"
+              />
+            </div>
+            <div className="w-[140px]">
+              <label className="block text-xs mb-1">Status</label>
+              <Select value={statusId} onValueChange={setStatusId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Status" />
+                  <SelectValue placeholder={statusesLoading ? "Loading..." : "All Statuses"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Statuses</SelectItem>
-                  {statusOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  {Array.isArray(complaintStatuses) && complaintStatuses.map((status: { id: string; name: string }) => (
+                    <SelectItem key={status.id} value={status.id}>{status.name}</SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All Priorities</SelectItem>
-                  {priorityOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={assignedFilter} onValueChange={setAssignedFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Assignment" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All Tickets</SelectItem>
-                  <SelectItem value="me">Assigned to Me</SelectItem>
-                  <SelectItem value="unassigned">Unassigned</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            <div className="w-[140px]">
+              <label className="block text-xs mb-1">Category</label>
+              <Select value={categoryId} onValueChange={setCategoryId}>
+                <SelectTrigger>
+                  <SelectValue placeholder={categoriesLoading ? "Loading..." : "All Categories"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {Array.isArray(complaintCategories) && complaintCategories.map((cat: { id: string; type: string }) => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.type.toUpperCase()}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleClearFilters}>Clear Filters</Button>
           </CardContent>
         </Card>
 
         {/* Tickets Table */}
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="p-0">
             {isLoading ? (
               <div className="flex justify-center items-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2 text-muted-foreground">Loading tickets...</span>
               </div>
             ) : isError ? (
               <div className="text-center py-8 text-red-500">
                 Error loading tickets. Please try again.
               </div>
+            ) : currentData.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No tickets found.
+              </div>
             ) : (
-              <DataTable
-                columns={columns}
-                data={filteredTickets}
-                searchQuery={searchQuery}
-                onRowClick={(ticket) => window.location.href = `/it-tickets/${ticket.id}`}
-              />
+              <div className="relative w-full overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[300px]">Title</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Assigned To</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {currentData.map((ticket: Ticket) => (
+                      <TableRow 
+                        key={ticket.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => window.location.href = `/it-tickets/${ticket.id}`}
+                      >
+                        <TableCell className="max-w-[300px] truncate" title={ticket.title}>
+                          {ticket.title}
+                        </TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            ticket.statusEntity?.code === 'NEW' ? 'bg-blue-100 text-blue-800' :
+                            ticket.statusEntity?.code === 'IN_PROGRESS' ? 'bg-yellow-100 text-yellow-800' :
+                            ticket.statusEntity?.code === 'RESOLVED' ? 'bg-green-100 text-green-800' :
+                            ticket.statusEntity?.code === 'CLOSED' ? 'bg-gray-100 text-gray-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {ticket.statusEntity?.name || 'Unknown'}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            ticket.priorityEntity?.code === 'URGENT' ? 'bg-red-100 text-red-800' :
+                            ticket.priorityEntity?.code === 'HIGH' ? 'bg-orange-100 text-orange-800' :
+                            ticket.priorityEntity?.code === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
+                            ticket.priorityEntity?.code === 'LOW' ? 'bg-green-100 text-green-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {ticket.priorityEntity?.name || 'Not Set'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="max-w-[150px] truncate" title={ticket.categoryEntity?.type?.toUpperCase()}>
+                          {ticket.categoryEntity?.type?.toUpperCase()}
+                        </TableCell>
+                        <TableCell className="max-w-[150px] truncate" title={ticket.assignedTo?.name || 'Unassigned'}>
+                          {ticket.assignedTo?.name || 'Unassigned'}
+                        </TableCell>
+                        <TableCell>
+                          {new Date(ticket.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            asChild
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Link href={`/it-tickets/${ticket.id}`}>
+                              View Details
+                            </Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
