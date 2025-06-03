@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import {
   Upload,
   X,
@@ -145,10 +145,6 @@ const getUsersByRole = async (role: string): Promise<User[]> => {
          Array.isArray(response.data.data) ? response.data.data : [];
 };
 
-const updateTicketStatus = async (ticketId: string, statusId: string) => {
-  const response = await api.patch(`/complaints/${ticketId}`, { statusId });
-  return response.data;
-};
 
 const reassignTicket = async (ticketId: string, assignedToId: string) => {
   const response = await api.patch(`/complaints/${ticketId}`, { assignedToId });
@@ -186,12 +182,12 @@ export default function TicketManagementPage() {
   const [complaintFiles, setComplaintFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
-  const [isRefreshing, ] = useState(false);
+  const [isRefreshing] = useState(false);
   const [, setModalOpen] = useState(false);
   const [, setCurrentAttachmentIndex] = useState(0);
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [isReassigning, setIsReassigning] = useState(false);
-  const [currentUserId, ] = useState<string | null>(null);
+  const [currentUserId] = useState<string | null>(null);
 
   // Refs
   const complaintFileInputRef = useRef<HTMLInputElement>(null);
@@ -240,7 +236,6 @@ export default function TicketManagementPage() {
   const {
     addAttachments: {
       mutateAsync: addAttachments,
-      isPending: isAddingAttachments,
     },
     deleteAttachment: {
       mutateAsync: deleteAttachment,
@@ -249,12 +244,18 @@ export default function TicketManagementPage() {
   } = useComplaintAttachments();
 
   const statusMutation = useMutation({
-    mutationFn: ({ ticketId, statusId }: { ticketId: string; statusId: string }) =>
-      updateTicketStatus(ticketId, statusId),
+    mutationFn: async ({ ticketId, statusId }: { ticketId: string; statusId: string }) => {
+      const response = await api.patch(`/complaints/${ticketId}`, { statusId });
+      return response.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['complaint', ticketId] });
-      toast.success('Ticket status updated');
+      toast.success('Ticket status updated successfully');
     },
+    onError: (error: Error) => {
+      console.error('Failed to update status:', error);
+      toast.error('Failed to update ticket status');
+    }
   });
 
   const priorityMutation = useMutation({
@@ -266,7 +267,7 @@ export default function TicketManagementPage() {
       queryClient.invalidateQueries({ queryKey: ['complaint', ticketId] });
       toast.success('Ticket priority updated successfully');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Failed to update priority:', error);
       toast.error('Failed to update ticket priority');
     }
@@ -293,7 +294,7 @@ export default function TicketManagementPage() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            You don't have permission to access this page.
+            You don&apos;t have permission to access this page.
           </AlertDescription>
         </Alert>
         <Button asChild className="mt-4">
@@ -640,7 +641,7 @@ export default function TicketManagementPage() {
                             });
                             setComplaintFiles([]);
                             toast.success('Files uploaded successfully');
-                          } catch (error) {
+                          } catch {
                             toast.error('Failed to upload files');
                           } finally {
                             setIsUploading(false);
@@ -738,7 +739,7 @@ export default function TicketManagementPage() {
                         setComment('');
                         refetchComments();
                         toast.success('Comment added');
-                      } catch (error) {
+                      } catch {
                         toast.error('Failed to add comment');
                       }
                     }}

@@ -40,7 +40,7 @@ import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import Image from "next/image";
-import { Attachment } from "@/hooks/useComplaints";
+import { Attachment, Complaint } from "@/hooks/useComplaints";
 
 // Modal component for viewing attachments
 const AttachmentModal = ({
@@ -202,7 +202,7 @@ const getStatusColor = (statusCode: StatusCode | undefined | null) => {
 };
 
 // Add helper function to check if ticket is closed or resolved
-const isTicketClosedOrResolved = (complaint: any) => {
+const isTicketClosedOrResolved = (complaint: Complaint) => {
   if (!complaint) return false;
   const status = (complaint.statusEntity?.code || complaint.status) as StatusCode | undefined;
   return status === 'CLOSED' || status === 'RESOLVED';
@@ -237,7 +237,6 @@ export default function TrackComplaintPage() {
   // Comments data and mutations
   const {
     data: comments = [],
-    isLoading: isLoadingComments,
     refetch: refetchComments,
   } = useAnonymousComplaintCommentsList(token);
 
