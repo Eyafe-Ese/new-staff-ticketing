@@ -443,7 +443,7 @@ export default function TicketManagementPage() {
                       disabled={!hasRole('it_officer') && !hasRole('hr_admin') || priorityMutation.isPending}
                     >
                       <SelectTrigger className="w-[140px]">
-                        <SelectValue />
+                        <SelectValue placeholder="Set Priority" />
                       </SelectTrigger>
                       <SelectContent>
                         {isLoadingPriorities ? (
@@ -455,21 +455,28 @@ export default function TicketManagementPage() {
                             No priorities available
                           </div>
                         ) : (
-                          priorities.map((priority) => (
-                            <SelectItem 
-                              key={priority.id} 
-                              value={priority.id}
-                              className="flex flex-col items-start"
-                              disabled={priority.id === complaint.priorityId}
-                            >
-                              <div className="font-medium">{priority.name}</div>
-                              {priority.description && (
-                                <div className="text-xs text-muted-foreground mt-0.5">
-                                  {priority.description}
-                                </div>
-                              )}
-                            </SelectItem>
-                          ))
+                          <>
+                            {!complaint.priorityId && (
+                              <SelectItem value="" className="text-muted-foreground">
+                                Not Set
+                              </SelectItem>
+                            )}
+                            {priorities.map((priority) => (
+                              <SelectItem 
+                                key={priority.id} 
+                                value={priority.id}
+                                className="flex flex-col items-start"
+                                disabled={priority.id === complaint.priorityId}
+                              >
+                                <div className="font-medium">{priority.name}</div>
+                                {priority.description && (
+                                  <div className="text-xs text-muted-foreground mt-0.5">
+                                    {priority.description}
+                                  </div>
+                                )}
+                              </SelectItem>
+                            ))}
+                          </>
                         )}
                       </SelectContent>
                     </Select>
@@ -789,13 +796,19 @@ export default function TicketManagementPage() {
                 <div>
                   <dt className="text-sm text-muted-foreground">Priority</dt>
                   <dd className="mt-1">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium border ${
-                        getPriorityColor(complaint.priorityEntity?.code as PriorityCode)
-                      }`}
-                    >
-                      {complaint.priorityEntity?.name || complaint.priority}
-                    </span>
+                    {complaint.priorityEntity ? (
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium border ${
+                          getPriorityColor(complaint.priorityEntity.code as PriorityCode)
+                        }`}
+                      >
+                        {complaint.priorityEntity.name}
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 rounded-full text-xs font-medium border bg-gray-100 text-gray-700 border-gray-200">
+                        Not Set
+                      </span>
+                    )}
                   </dd>
                 </div>
 
