@@ -434,8 +434,12 @@ export default function TicketManagementPage() {
                     </Select>
 
                     <Select
-                      defaultValue={complaint.priorityId || ''}
+                      defaultValue={complaint.priorityId || 'none'}
                       onValueChange={(priorityId) => {
+                        if (priorityId === 'none') {
+                          // Handle unsetting priority if needed
+                          return;
+                        }
                         if (priorityId) {
                           priorityMutation.mutate({ ticketId: complaint.id, priorityId });
                         }
@@ -457,7 +461,7 @@ export default function TicketManagementPage() {
                         ) : (
                           <>
                             {!complaint.priorityId && (
-                              <SelectItem value="" className="text-muted-foreground">
+                              <SelectItem value="none" className="text-muted-foreground">
                                 Not Set
                               </SelectItem>
                             )}
@@ -712,12 +716,12 @@ export default function TicketManagementPage() {
                         className="flex gap-3 p-3 rounded-lg bg-muted/50"
                       >
                         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                          {comment.author.name.charAt(0).toUpperCase()}
+                          {comment.author?.name?.charAt(0).toUpperCase() || '?'}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-medium text-sm">
-                              {comment.author.name}
+                              {comment.author?.name || 'Unknown User'}
                             </span>
                             <span className="text-xs text-muted-foreground">
                               {formatDate(comment.createdAt)}
