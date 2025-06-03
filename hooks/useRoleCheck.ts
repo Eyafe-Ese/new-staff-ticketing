@@ -1,10 +1,10 @@
-import { useSelector } from 'react-redux';
-import { 
-  UserRole, 
-  ROLE_HIERARCHY, 
-  selectUserRole, 
-  selectIsAuthenticated 
-} from '@/store/authSlice';
+import { useSelector } from "react-redux";
+import {
+  UserRole,
+  ROLE_HIERARCHY,
+  selectUserRole,
+  selectIsAuthenticated,
+} from "@/store/authSlice";
 
 /**
  * Custom hook for checking user roles and permissions
@@ -25,21 +25,21 @@ export function useRoleCheck() {
    * Check if the current user has HR admin role
    */
   const isHRAdmin = (): boolean => {
-    return hasRole('hr_admin');
+    return hasRole("hr_admin");
   };
 
   /**
    * Check if the current user has IT officer role
    */
   const isITOfficer = (): boolean => {
-    return hasRole('it_officer');
+    return hasRole("it_officer");
   };
 
   /**
    * Check if the current user has staff role or higher
    */
   const isStaffOrHigher = (): boolean => {
-    return hasRole('staff');
+    return hasRole("staff");
   };
 
   return {
@@ -48,6 +48,6 @@ export function useRoleCheck() {
     hasRole,
     isHRAdmin,
     isITOfficer,
-    isStaffOrHigher
+    isStaffOrHigher,
   };
-} 
+}

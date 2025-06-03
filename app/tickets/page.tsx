@@ -5,7 +5,13 @@ import { useRoleCheck } from "@/hooks/useRoleCheck";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Link from "next/link";
 import { useComplaintCategories } from "@/hooks/useComplaintCategories";
 import { useDepartments } from "@/hooks/useDepartments";
@@ -47,7 +53,14 @@ const mockTickets = [
   },
 ];
 
-const statusOptions = ["All", "New", "In Progress", "On Hold", "Resolved", "Closed"];
+const statusOptions = [
+  "All",
+  "New",
+  "In Progress",
+  "On Hold",
+  "Resolved",
+  "Closed",
+];
 
 export default function TicketsPage() {
   const { userRole } = useRoleCheck();
@@ -57,24 +70,32 @@ export default function TicketsPage() {
   const [anonymous, setAnonymous] = useState(false);
   const [search, setSearch] = useState("");
   const [assignedToMe, setAssignedToMe] = useState(false);
-  
+
   // Fetch categories and departments from API
-  const { complaintCategories, isLoading: categoriesLoading } = useComplaintCategories();
+  const { complaintCategories, isLoading: categoriesLoading } =
+    useComplaintCategories();
   const { departments, isLoading: departmentsLoading } = useDepartments();
 
   // Filter tickets based on role and filters (mock logic)
   let tickets = mockTickets;
   if (userRole === "staff") {
-    tickets = tickets.filter(t => t.reporter === "You");
+    tickets = tickets.filter((t) => t.reporter === "You");
   } else if (userRole === "department_officer") {
-    tickets = tickets.filter(t => t.department === "IT"); // Example: officer in IT
-    if (assignedToMe) tickets = tickets.filter(t => t.assignedToMe);
+    tickets = tickets.filter((t) => t.department === "IT"); // Example: officer in IT
+    if (assignedToMe) tickets = tickets.filter((t) => t.assignedToMe);
   }
-  if (status !== "All") tickets = tickets.filter(t => t.status === status);
-  if (category !== "All") tickets = tickets.filter(t => t.category === category);
-  if (userRole === "admin" && department !== "All") tickets = tickets.filter(t => t.department === department);
-  if (anonymous) tickets = tickets.filter(t => t.anonymous);
-  if (search) tickets = tickets.filter(t => t.id.includes(search) || t.subject.toLowerCase().includes(search.toLowerCase()));
+  if (status !== "All") tickets = tickets.filter((t) => t.status === status);
+  if (category !== "All")
+    tickets = tickets.filter((t) => t.category === category);
+  if (userRole === "admin" && department !== "All")
+    tickets = tickets.filter((t) => t.department === department);
+  if (anonymous) tickets = tickets.filter((t) => t.anonymous);
+  if (search)
+    tickets = tickets.filter(
+      (t) =>
+        t.id.includes(search) ||
+        t.subject.toLowerCase().includes(search.toLowerCase())
+    );
 
   return (
     <div className="space-y-6">
@@ -95,7 +116,11 @@ export default function TicketsPage() {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                {statusOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                {statusOptions.map((opt) => (
+                  <SelectItem key={opt} value={opt}>
+                    {opt}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -103,12 +128,16 @@ export default function TicketsPage() {
             <label className="block text-xs mb-1">Category</label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger className="w-32">
-                <SelectValue placeholder={categoriesLoading ? "Loading..." : "Category"} />
+                <SelectValue
+                  placeholder={categoriesLoading ? "Loading..." : "Category"}
+                />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="All">All</SelectItem>
-                {complaintCategories.map(cat => (
-                  <SelectItem key={cat.id} value={cat.id}>{cat.type.toUpperCase()}</SelectItem>
+                {complaintCategories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.type.toUpperCase()}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -118,12 +147,18 @@ export default function TicketsPage() {
               <label className="block text-xs mb-1">Department</label>
               <Select value={department} onValueChange={setDepartment}>
                 <SelectTrigger className="w-32">
-                  <SelectValue placeholder={departmentsLoading ? "Loading..." : "Department"} />
+                  <SelectValue
+                    placeholder={
+                      departmentsLoading ? "Loading..." : "Department"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="All">All</SelectItem>
-                  {departments.map(dept => (
-                    <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -131,28 +166,58 @@ export default function TicketsPage() {
           )}
           <div>
             <label className="block text-xs mb-1">Anonymous</label>
-            <Button variant={anonymous ? "default" : "outline"} size="sm" onClick={() => setAnonymous(a => !a)}>
+            <Button
+              variant={anonymous ? "default" : "outline"}
+              size="sm"
+              onClick={() => setAnonymous((a) => !a)}
+            >
               {anonymous ? "Yes" : "No"}
             </Button>
           </div>
           {userRole === "department_officer" && (
             <div>
               <label className="block text-xs mb-1">Assigned To Me</label>
-              <Button variant={assignedToMe ? "default" : "outline"} size="sm" onClick={() => setAssignedToMe(a => !a)}>
+              <Button
+                variant={assignedToMe ? "default" : "outline"}
+                size="sm"
+                onClick={() => setAssignedToMe((a) => !a)}
+              >
                 {assignedToMe ? "Yes" : "No"}
               </Button>
             </div>
           )}
           <div>
             <label className="block text-xs mb-1">Date Range</label>
-            <Input type="text" placeholder="Date Range" className="w-36" disabled />
+            <Input
+              type="text"
+              placeholder="Date Range"
+              className="w-36"
+              disabled
+            />
           </div>
           <div>
             <label className="block text-xs mb-1">Search</label>
-            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="ID or subject" className="w-40" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="ID or subject"
+              className="w-40"
+            />
           </div>
           <Button className="bg-primary text-white">Apply</Button>
-          <Button variant="outline" onClick={() => { setStatus("All"); setCategory("All"); setDepartment("All"); setAnonymous(false); setSearch(""); setAssignedToMe(false); }}>Clear</Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setStatus("All");
+              setCategory("All");
+              setDepartment("All");
+              setAnonymous(false);
+              setSearch("");
+              setAssignedToMe(false);
+            }}
+          >
+            Clear
+          </Button>
         </CardContent>
       </Card>
       {/* Table */}
@@ -183,7 +248,7 @@ export default function TicketsPage() {
                 </tr>
               </thead>
               <tbody>
-                {tickets.map(ticket => (
+                {tickets.map((ticket) => (
                   <tr key={ticket.id} className="border-b hover:bg-gray-50">
                     <td className="p-2 font-mono">{ticket.id}</td>
                     <td className="p-2">{ticket.subject}</td>
@@ -191,11 +256,18 @@ export default function TicketsPage() {
                     <td className="p-2">{ticket.department}</td>
                     <td className="p-2">{ticket.reporter}</td>
                     <td className="p-2">
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">{ticket.status}</span>
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                        {ticket.status}
+                      </span>
                     </td>
                     <td className="p-2">{ticket.updatedAt}</td>
                     <td className="p-2 flex gap-2">
-                      <Link href={`/tickets/${ticket.id}`} className="text-primary underline">View</Link>
+                      <Link
+                        href={`/tickets/${ticket.id}`}
+                        className="text-primary underline"
+                      >
+                        View
+                      </Link>
                       {/* Add role-based actions here */}
                       {userRole === "staff" && (
                         <Button variant="ghost" size="icon" title="Add Comment">
@@ -204,13 +276,19 @@ export default function TicketsPage() {
                       )}
                       {userRole === "department_officer" && (
                         <>
-                          {!ticket.assignedToMe && <Button variant="outline" size="sm">Assign to Me</Button>}
+                          {!ticket.assignedToMe && (
+                            <Button variant="outline" size="sm">
+                              Assign to Me
+                            </Button>
+                          )}
                           <Select defaultValue={ticket.status}>
                             <SelectTrigger className="w-28">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="In Progress">In Progress</SelectItem>
+                              <SelectItem value="In Progress">
+                                In Progress
+                              </SelectItem>
                               <SelectItem value="On Hold">On Hold</SelectItem>
                               <SelectItem value="Resolved">Resolved</SelectItem>
                             </SelectContent>
@@ -225,14 +303,20 @@ export default function TicketsPage() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="New">New</SelectItem>
-                              <SelectItem value="In Progress">In Progress</SelectItem>
+                              <SelectItem value="In Progress">
+                                In Progress
+                              </SelectItem>
                               <SelectItem value="On Hold">On Hold</SelectItem>
                               <SelectItem value="Resolved">Resolved</SelectItem>
                               <SelectItem value="Closed">Closed</SelectItem>
                             </SelectContent>
                           </Select>
-                          <Button variant="outline" size="sm">Reassign</Button>
-                          <Button variant="destructive" size="sm">Force Close</Button>
+                          <Button variant="outline" size="sm">
+                            Reassign
+                          </Button>
+                          <Button variant="destructive" size="sm">
+                            Force Close
+                          </Button>
                         </>
                       )}
                     </td>
@@ -245,9 +329,13 @@ export default function TicketsPage() {
       </Card>
       {/* Pagination (placeholder) */}
       <div className="flex justify-end mt-4">
-        <Button variant="outline" size="sm">Previous</Button>
-        <Button variant="outline" size="sm" className="ml-2">Next</Button>
+        <Button variant="outline" size="sm">
+          Previous
+        </Button>
+        <Button variant="outline" size="sm" className="ml-2">
+          Next
+        </Button>
       </div>
     </div>
   );
-} 
+}

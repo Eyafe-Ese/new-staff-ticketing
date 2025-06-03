@@ -1,30 +1,50 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
-import { RoleProtectedRoute } from '@/components/RoleProtectedRoute';
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+import { RoleProtectedRoute } from "@/components/RoleProtectedRoute";
 
 // Payment settings schema
 const paymentSchema = z.object({
   stripeEnabled: z.boolean(),
-  stripePublicKey: z.string().min(1, 'Stripe public key is required'),
-  stripeSecretKey: z.string().min(1, 'Stripe secret key is required'),
+  stripePublicKey: z.string().min(1, "Stripe public key is required"),
+  stripeSecretKey: z.string().min(1, "Stripe secret key is required"),
   paypalEnabled: z.boolean(),
   paypalClientId: z.string().optional(),
   paypalSecretKey: z.string().optional(),
-  currency: z.enum(['USD', 'EUR', 'GBP', 'CAD', 'AUD']),
+  currency: z.enum(["USD", "EUR", "GBP", "CAD", "AUD"]),
 });
 
 // Shipping settings schema
@@ -60,12 +80,12 @@ export default function SettingsPage() {
     resolver: zodResolver(paymentSchema),
     defaultValues: {
       stripeEnabled: true,
-      stripePublicKey: 'pk_test_...',
-      stripeSecretKey: 'sk_test_...',
+      stripePublicKey: "pk_test_...",
+      stripeSecretKey: "sk_test_...",
       paypalEnabled: false,
-      paypalClientId: '',
-      paypalSecretKey: '',
-      currency: 'USD',
+      paypalClientId: "",
+      paypalSecretKey: "",
+      currency: "USD",
     },
   });
 
@@ -101,17 +121,17 @@ export default function SettingsPage() {
       try {
         // In a real app, this would be an API call
         // return await api.put('/api/settings/payment', data);
-        console.log('Saving payment settings:', data);
+        console.log("Saving payment settings:", data);
         return data;
       } finally {
         setIsSavingPayment(false);
       }
     },
     onSuccess: () => {
-      toast.success('Payment settings saved successfully');
+      toast.success("Payment settings saved successfully");
     },
     onError: () => {
-      toast.error('Failed to save payment settings');
+      toast.error("Failed to save payment settings");
     },
   });
 
@@ -122,17 +142,17 @@ export default function SettingsPage() {
       try {
         // In a real app, this would be an API call
         // return await api.put('/api/settings/shipping', data);
-        console.log('Saving shipping settings:', data);
+        console.log("Saving shipping settings:", data);
         return data;
       } finally {
         setIsSavingShipping(false);
       }
     },
     onSuccess: () => {
-      toast.success('Shipping settings saved successfully');
+      toast.success("Shipping settings saved successfully");
     },
     onError: () => {
-      toast.error('Failed to save shipping settings');
+      toast.error("Failed to save shipping settings");
     },
   });
 
@@ -143,17 +163,17 @@ export default function SettingsPage() {
       try {
         // In a real app, this would be an API call
         // return await api.put('/api/settings/tax', data);
-        console.log('Saving tax settings:', data);
+        console.log("Saving tax settings:", data);
         return data;
       } finally {
         setIsSavingTax(false);
       }
     },
     onSuccess: () => {
-      toast.success('Tax settings saved successfully');
+      toast.success("Tax settings saved successfully");
     },
     onError: () => {
-      toast.error('Failed to save tax settings');
+      toast.error("Failed to save tax settings");
     },
   });
 
@@ -196,13 +216,18 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent>
                 <Form {...paymentForm}>
-                  <form onSubmit={paymentForm.handleSubmit(onSubmitPayment)} className="space-y-6">
+                  <form
+                    onSubmit={paymentForm.handleSubmit(onSubmitPayment)}
+                    className="space-y-6"
+                  >
                     <div className="space-y-4">
                       <div className="border rounded-md p-4">
                         <div className="flex items-center justify-between mb-4">
                           <div>
                             <h3 className="font-medium">Stripe</h3>
-                            <p className="text-sm text-muted-foreground">Accept credit card payments via Stripe</p>
+                            <p className="text-sm text-muted-foreground">
+                              Accept credit card payments via Stripe
+                            </p>
                           </div>
                           <FormField
                             control={paymentForm.control}
@@ -210,8 +235,8 @@ export default function SettingsPage() {
                             render={({ field }) => (
                               <FormItem className="flex items-center space-x-2">
                                 <FormControl>
-                                  <Switch 
-                                    checked={field.value} 
+                                  <Switch
+                                    checked={field.value}
                                     onCheckedChange={field.onChange}
                                   />
                                 </FormControl>
@@ -228,10 +253,12 @@ export default function SettingsPage() {
                               <FormItem>
                                 <FormLabel>Public Key</FormLabel>
                                 <FormControl>
-                                  <Input 
-                                    placeholder="pk_test_..." 
-                                    {...field} 
-                                    disabled={!paymentForm.watch('stripeEnabled')} 
+                                  <Input
+                                    placeholder="pk_test_..."
+                                    {...field}
+                                    disabled={
+                                      !paymentForm.watch("stripeEnabled")
+                                    }
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -246,11 +273,13 @@ export default function SettingsPage() {
                               <FormItem>
                                 <FormLabel>Secret Key</FormLabel>
                                 <FormControl>
-                                  <Input 
-                                    type="password" 
-                                    placeholder="sk_test_..." 
-                                    {...field} 
-                                    disabled={!paymentForm.watch('stripeEnabled')} 
+                                  <Input
+                                    type="password"
+                                    placeholder="sk_test_..."
+                                    {...field}
+                                    disabled={
+                                      !paymentForm.watch("stripeEnabled")
+                                    }
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -264,7 +293,9 @@ export default function SettingsPage() {
                         <div className="flex items-center justify-between mb-4">
                           <div>
                             <h3 className="font-medium">PayPal</h3>
-                            <p className="text-sm text-muted-foreground">Accept payments via PayPal</p>
+                            <p className="text-sm text-muted-foreground">
+                              Accept payments via PayPal
+                            </p>
                           </div>
                           <FormField
                             control={paymentForm.control}
@@ -272,8 +303,8 @@ export default function SettingsPage() {
                             render={({ field }) => (
                               <FormItem className="flex items-center space-x-2">
                                 <FormControl>
-                                  <Switch 
-                                    checked={field.value} 
+                                  <Switch
+                                    checked={field.value}
                                     onCheckedChange={field.onChange}
                                   />
                                 </FormControl>
@@ -290,10 +321,12 @@ export default function SettingsPage() {
                               <FormItem>
                                 <FormLabel>Client ID</FormLabel>
                                 <FormControl>
-                                  <Input 
-                                    placeholder="PayPal Client ID" 
-                                    {...field} 
-                                    disabled={!paymentForm.watch('paypalEnabled')} 
+                                  <Input
+                                    placeholder="PayPal Client ID"
+                                    {...field}
+                                    disabled={
+                                      !paymentForm.watch("paypalEnabled")
+                                    }
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -308,11 +341,13 @@ export default function SettingsPage() {
                               <FormItem>
                                 <FormLabel>Secret Key</FormLabel>
                                 <FormControl>
-                                  <Input 
-                                    type="password" 
-                                    placeholder="PayPal Secret Key" 
-                                    {...field} 
-                                    disabled={!paymentForm.watch('paypalEnabled')} 
+                                  <Input
+                                    type="password"
+                                    placeholder="PayPal Secret Key"
+                                    {...field}
+                                    disabled={
+                                      !paymentForm.watch("paypalEnabled")
+                                    }
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -328,18 +363,29 @@ export default function SettingsPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Currency</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select currency" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="USD">USD - US Dollar</SelectItem>
+                                <SelectItem value="USD">
+                                  USD - US Dollar
+                                </SelectItem>
                                 <SelectItem value="EUR">EUR - Euro</SelectItem>
-                                <SelectItem value="GBP">GBP - British Pound</SelectItem>
-                                <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
-                                <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
+                                <SelectItem value="GBP">
+                                  GBP - British Pound
+                                </SelectItem>
+                                <SelectItem value="CAD">
+                                  CAD - Canadian Dollar
+                                </SelectItem>
+                                <SelectItem value="AUD">
+                                  AUD - Australian Dollar
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -355,7 +401,7 @@ export default function SettingsPage() {
                           Saving...
                         </>
                       ) : (
-                        'Save Payment Settings'
+                        "Save Payment Settings"
                       )}
                     </Button>
                   </form>
@@ -375,12 +421,17 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent>
                 <Form {...shippingForm}>
-                  <form onSubmit={shippingForm.handleSubmit(onSubmitShipping)} className="space-y-6">
+                  <form
+                    onSubmit={shippingForm.handleSubmit(onSubmitShipping)}
+                    className="space-y-6"
+                  >
                     <div className="space-y-4">
                       <div className="flex items-center justify-between border p-4 rounded-md">
                         <div>
                           <h3 className="font-medium">Free Shipping</h3>
-                          <p className="text-sm text-muted-foreground">Offer free shipping on orders above a threshold</p>
+                          <p className="text-sm text-muted-foreground">
+                            Offer free shipping on orders above a threshold
+                          </p>
                         </div>
                         <FormField
                           control={shippingForm.control}
@@ -388,8 +439,8 @@ export default function SettingsPage() {
                           render={({ field }) => (
                             <FormItem className="flex items-center space-x-2">
                               <FormControl>
-                                <Switch 
-                                  checked={field.value} 
+                                <Switch
+                                  checked={field.value}
                                   onCheckedChange={field.onChange}
                                 />
                               </FormControl>
@@ -405,14 +456,17 @@ export default function SettingsPage() {
                           <FormItem>
                             <FormLabel>Free Shipping Threshold ($)</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="number" 
-                                {...field} 
-                                disabled={!shippingForm.watch('enableFreeShipping')} 
+                              <Input
+                                type="number"
+                                {...field}
+                                disabled={
+                                  !shippingForm.watch("enableFreeShipping")
+                                }
                               />
                             </FormControl>
                             <FormDescription>
-                              Orders above this amount will qualify for free shipping
+                              Orders above this amount will qualify for free
+                              shipping
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -487,12 +541,18 @@ export default function SettingsPage() {
                         name="internationalShippingRate"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>International Shipping Rate ($)</FormLabel>
+                            <FormLabel>
+                              International Shipping Rate ($)
+                            </FormLabel>
                             <FormControl>
-                              <Input 
-                                type="number" 
-                                {...field} 
-                                disabled={!shippingForm.watch('allowInternationalShipping')} 
+                              <Input
+                                type="number"
+                                {...field}
+                                disabled={
+                                  !shippingForm.watch(
+                                    "allowInternationalShipping"
+                                  )
+                                }
                               />
                             </FormControl>
                             <FormDescription>
@@ -511,7 +571,7 @@ export default function SettingsPage() {
                           Saving...
                         </>
                       ) : (
-                        'Save Shipping Settings'
+                        "Save Shipping Settings"
                       )}
                     </Button>
                   </form>
@@ -531,7 +591,10 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent>
                 <Form {...taxForm}>
-                  <form onSubmit={taxForm.handleSubmit(onSubmitTax)} className="space-y-6">
+                  <form
+                    onSubmit={taxForm.handleSubmit(onSubmitTax)}
+                    className="space-y-6"
+                  >
                     <div className="space-y-4">
                       <FormField
                         control={taxForm.control}
@@ -563,10 +626,10 @@ export default function SettingsPage() {
                           <FormItem>
                             <FormLabel>Sales Tax Rate (%)</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="number" 
-                                {...field} 
-                                disabled={!taxForm.watch('enableTax')} 
+                              <Input
+                                type="number"
+                                {...field}
+                                disabled={!taxForm.watch("enableTax")}
                               />
                             </FormControl>
                             <FormDescription>
@@ -587,14 +650,15 @@ export default function SettingsPage() {
                                 Include Tax in Product Prices
                               </FormLabel>
                               <FormDescription>
-                                Product prices will be displayed with tax included
+                                Product prices will be displayed with tax
+                                included
                               </FormDescription>
                             </div>
                             <FormControl>
                               <Switch
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
-                                disabled={!taxForm.watch('enableTax')}
+                                disabled={!taxForm.watch("enableTax")}
                               />
                             </FormControl>
                           </FormItem>
@@ -611,7 +675,8 @@ export default function SettingsPage() {
                                 Enable VAT
                               </FormLabel>
                               <FormDescription>
-                                Apply Value Added Tax (VAT) to international orders
+                                Apply Value Added Tax (VAT) to international
+                                orders
                               </FormDescription>
                             </div>
                             <FormControl>
@@ -631,10 +696,10 @@ export default function SettingsPage() {
                           <FormItem>
                             <FormLabel>VAT Rate (%)</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="number" 
-                                {...field} 
-                                disabled={!taxForm.watch('enableVAT')} 
+                              <Input
+                                type="number"
+                                {...field}
+                                disabled={!taxForm.watch("enableVAT")}
                               />
                             </FormControl>
                             <FormDescription>
@@ -653,7 +718,7 @@ export default function SettingsPage() {
                           Saving...
                         </>
                       ) : (
-                        'Save Tax Settings'
+                        "Save Tax Settings"
                       )}
                     </Button>
                   </form>
@@ -665,4 +730,4 @@ export default function SettingsPage() {
       </div>
     </RoleProtectedRoute>
   );
-} 
+}

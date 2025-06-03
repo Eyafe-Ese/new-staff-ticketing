@@ -66,10 +66,14 @@ const api = axios.create({
 });
 
 // Utility function for file uploads with extended timeout
-export const createFileUploadRequest = (url: string, data: FormData, options: FileUploadOptions = {}) => {
+export const createFileUploadRequest = (
+  url: string,
+  data: FormData,
+  options: FileUploadOptions = {}
+) => {
   return api.post(url, data, {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      "Content-Type": "multipart/form-data",
     },
     timeout: 60000, // 60 seconds timeout for file uploads
     // Add support for upload progress tracking
@@ -111,8 +115,8 @@ const onTokenRefreshed = (newToken: string) => {
 api.interceptors.request.use(
   (config) => {
     // For debugging token issues
-    const requestUrl = config.url || 'unknown';
-    
+    const requestUrl = config.url || "unknown";
+
     // Add authorization token if available
     if (storeRef) {
       const state = storeRef.getState();
@@ -122,11 +126,13 @@ api.interceptors.request.use(
       if (accessToken) {
         config.headers.Authorization = `Bearer ${accessToken}`;
         // Log non-refresh token requests to track token usage
-        if (!requestUrl.includes('/auth/refresh')) {
+        if (!requestUrl.includes("/auth/refresh")) {
           console.log(`Request to ${requestUrl} with auth token`);
         }
       } else {
-        console.log(`Request to ${requestUrl} without auth token (not found in store)`);
+        console.log(
+          `Request to ${requestUrl} without auth token (not found in store)`
+        );
       }
     } else {
       // If store is not available yet but token is in localStorage
@@ -134,11 +140,15 @@ api.interceptors.request.use(
       if (accessToken) {
         config.headers.Authorization = `Bearer ${accessToken}`;
         // Log non-refresh token requests to track token usage
-        if (!requestUrl.includes('/auth/refresh')) {
-          console.log(`Request to ${requestUrl} with auth token from localStorage`);
+        if (!requestUrl.includes("/auth/refresh")) {
+          console.log(
+            `Request to ${requestUrl} with auth token from localStorage`
+          );
         }
       } else {
-        console.log(`Request to ${requestUrl} without auth token (not found in localStorage)`);
+        console.log(
+          `Request to ${requestUrl} without auth token (not found in localStorage)`
+        );
       }
     }
 
@@ -173,14 +183,16 @@ internalAxios.interceptors.request.use(
     if (config.method !== "get" && config.method !== "GET") {
       // If CSRF token is not available, try to fetch it before proceeding
       if (!csrfToken) {
-        console.log("CSRF token not available, fetching before proceeding with request");
+        console.log(
+          "CSRF token not available, fetching before proceeding with request"
+        );
         try {
           await fetchCsrfToken();
         } catch (error) {
           console.error("Failed to fetch CSRF token before request", error);
         }
       }
-      
+
       // Now add the CSRF token to the header if it's available
       if (csrfToken) {
         config.headers["X-CSRF-Token"] = csrfToken;
@@ -200,7 +212,9 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    console.log(`API error: ${error.response?.status} for ${originalRequest.url}`);
+    console.log(
+      `API error: ${error.response?.status} for ${originalRequest.url}`
+    );
 
     // Handle unauthorized errors (401)
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -220,7 +234,9 @@ api.interceptors.response.use(
       console.log("Starting token refresh process");
 
       try {
-        const refreshToken = storeRef?.getState()?.auth?.refreshToken || localStorage.getItem("refreshToken");
+        const refreshToken =
+          storeRef?.getState()?.auth?.refreshToken ||
+          localStorage.getItem("refreshToken");
 
         if (!refreshToken) {
           throw new Error("No refresh token available");
@@ -228,12 +244,18 @@ api.interceptors.response.use(
 
         console.log("Calling refresh token endpoint");
         // Use internal axios instance with CSRF token for refresh
-        const response = await internalAxios.post(`/auth/refresh`, { refreshToken });
+        const response = await internalAxios.post(`/auth/refresh`, {
+          refreshToken,
+        });
         console.log("Refresh token response received");
-        
+
         // Handle different response structures
-        const accessToken = response.data.data?.accessToken || response.data.accessToken;
-        const newRefreshToken = response.data.data?.refreshToken || response.data.refreshToken || refreshToken;
+        const accessToken =
+          response.data.data?.accessToken || response.data.accessToken;
+        const newRefreshToken =
+          response.data.data?.refreshToken ||
+          response.data.refreshToken ||
+          refreshToken;
 
         if (!accessToken) {
           throw new Error("No access token in refresh response");
@@ -242,7 +264,7 @@ api.interceptors.response.use(
         console.log("Received new access token, updating storage");
         // Update token in localStorage
         localStorage.setItem("accessToken", accessToken);
-        
+
         // If a new refresh token was provided, update it
         if (newRefreshToken && newRefreshToken !== refreshToken) {
           localStorage.setItem("refreshToken", newRefreshToken);
@@ -263,7 +285,7 @@ api.interceptors.response.use(
         // Process waiting requests
         console.log("Processing waiting requests with new token");
         onTokenRefreshed(accessToken);
-        
+
         // Retry original request with new token
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         isRefreshing = false;
@@ -271,28 +293,32 @@ api.interceptors.response.use(
         return axios(originalRequest);
       } catch (refreshError) {
         console.error("Token refresh failed:", refreshError);
-        
+
         // Check specifically for CSRF validation errors
-        const error = refreshError as { response?: { data?: { message?: string } } };
-        if (error.response?.data?.message?.includes('CSRF validation failed')) {
-          console.warn("CSRF validation failed during token refresh, will retry with fresh CSRF token");
-          
+        const error = refreshError as {
+          response?: { data?: { message?: string } };
+        };
+        if (error.response?.data?.message?.includes("CSRF validation failed")) {
+          console.warn(
+            "CSRF validation failed during token refresh, will retry with fresh CSRF token"
+          );
+
           // Try to fetch a new CSRF token
           try {
             await fetchCsrfToken();
             console.log("New CSRF token fetched after validation failure");
-            
+
             // Reset the refresh state to allow a retry
             isRefreshing = false;
             originalRequest._retry = false;
-            
+
             // Retry the original request
             return axios(originalRequest);
           } catch (csrfError) {
             console.error("Failed to fetch new CSRF token:", csrfError);
           }
         }
-        
+
         // If refresh fails, clear auth state
         if (storeRef) {
           storeRef.dispatch({ type: "auth/clearCredentials" });
@@ -307,7 +333,7 @@ api.interceptors.response.use(
         if (typeof window !== "undefined") {
           window.location.href = "/login";
         }
-        
+
         isRefreshing = false;
         return Promise.reject(refreshError);
       }
@@ -318,15 +344,15 @@ api.interceptors.response.use(
 );
 
 // Initialize by fetching CSRF token
-fetchCsrfToken().catch(error => {
+fetchCsrfToken().catch((error) => {
   console.error("Failed to fetch initial CSRF token, will retry:", error);
-  
+
   // Retry after a delay to handle race conditions during app initialization
   setTimeout(() => {
-    fetchCsrfToken().catch(retryError => {
+    fetchCsrfToken().catch((retryError) => {
       console.error("Second attempt to fetch CSRF token failed:", retryError);
     });
   }, 2000);
 });
 
-export default api; 
+export default api;

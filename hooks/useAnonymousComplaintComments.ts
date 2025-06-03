@@ -1,6 +1,6 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-import api, { createFileUploadRequest } from '@/utils/api';
-import { Attachment } from './useComplaints';
+import { useMutation, useQuery } from "@tanstack/react-query";
+import api, { createFileUploadRequest } from "@/utils/api";
+import { Attachment } from "./useComplaints";
 
 // Define author type from API response
 export interface CommentAuthor {
@@ -53,30 +53,35 @@ interface AddAttachmentResponse {
  * @returns Mutation for adding comments
  */
 export function useAnonymousComplaintComments() {
-  const addComment = async ({ token, message, files, onUploadProgress }: AddCommentParams): Promise<AddCommentResponse> => {
+  const addComment = async ({
+    token,
+    message,
+    files,
+    onUploadProgress,
+  }: AddCommentParams): Promise<AddCommentResponse> => {
     // If there are files to upload, use FormData
     if (files && files.length > 0) {
       const formData = new FormData();
-      formData.append('message', message);
-      
+      formData.append("message", message);
+
       // Append each file to the FormData using 'files' field name as per API docs
-      files.forEach(file => {
-        formData.append('files', file);
+      files.forEach((file) => {
+        formData.append("files", file);
       });
-      
+
       // Use specialized file upload function with timeout and progress tracking
       const response = await createFileUploadRequest(
-        `/complaints/tracking/${token}/comments`, 
+        `/complaints/tracking/${token}/comments`,
         formData,
         { onUploadProgress }
       );
-      
+
       return response.data;
-    } 
-    
+    }
+
     // If no files, just send JSON
-    const response = await api.post(`/complaints/tracking/${token}/comments`, { 
-      message
+    const response = await api.post(`/complaints/tracking/${token}/comments`, {
+      message,
     });
     return response.data;
   };
@@ -84,7 +89,7 @@ export function useAnonymousComplaintComments() {
   return {
     addComment: useMutation({
       mutationFn: addComment,
-    })
+    }),
   };
 }
 
@@ -98,22 +103,29 @@ export function useAnonymousComplaintCommentsList(token: string) {
     if (!token) {
       return [];
     }
-    
+
     const response = await api.get(`/complaints/tracking/${token}/comments`);
-    
+
     // Handle the API response format with data nesting
     if (response.data && Array.isArray(response.data)) {
       return response.data;
-    } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+    } else if (
+      response.data &&
+      response.data.data &&
+      Array.isArray(response.data.data)
+    ) {
       return response.data.data;
     }
-    
-    console.warn('Unexpected response format from comments endpoint:', response.data);
+
+    console.warn(
+      "Unexpected response format from comments endpoint:",
+      response.data
+    );
     return [];
   };
 
   return useQuery({
-    queryKey: ['anonymous-complaint-comments', token],
+    queryKey: ["anonymous-complaint-comments", token],
     queryFn: fetchComments,
     enabled: !!token,
     staleTime: 30000, // 30 seconds
@@ -125,27 +137,31 @@ export function useAnonymousComplaintCommentsList(token: string) {
  * @returns Mutation for adding attachments
  */
 export function useAnonymousComplaintAttachments() {
-  const addAttachments = async ({ token, files, onUploadProgress }: AddAttachmentParams): Promise<AddAttachmentResponse> => {
+  const addAttachments = async ({
+    token,
+    files,
+    onUploadProgress,
+  }: AddAttachmentParams): Promise<AddAttachmentResponse> => {
     const formData = new FormData();
-    
+
     // Append each file to the FormData using 'file' field name as per API docs
-    files.forEach(file => {
-      formData.append('file', file);
+    files.forEach((file) => {
+      formData.append("file", file);
     });
-    
+
     // Use specialized file upload function with timeout and progress tracking
     const response = await createFileUploadRequest(
-      `/complaints/tracking/${token}/attachments`, 
+      `/complaints/tracking/${token}/attachments`,
       formData,
       { onUploadProgress }
     );
-    
+
     return response.data;
   };
 
   return {
     addAttachments: useMutation({
       mutationFn: addAttachments,
-    })
+    }),
   };
-} 
+}

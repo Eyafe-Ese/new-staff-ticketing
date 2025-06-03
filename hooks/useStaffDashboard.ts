@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import api from '@/utils/api';
+import { useQuery } from "@tanstack/react-query";
+import api from "@/utils/api";
 
 interface StatsData {
   myTickets: number;
@@ -41,12 +41,12 @@ interface ApiResponse {
 
 export function useStaffDashboard() {
   const fetchDashboardData = async (): Promise<StaffDashboardData> => {
-    const response = await api.get<ApiResponse>('/dashboard/staff');
+    const response = await api.get<ApiResponse>("/dashboard/staff");
     return response.data.data;
   };
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['staffDashboard'],
+    queryKey: ["staffDashboard"],
     queryFn: fetchDashboardData,
   });
 
@@ -57,6 +57,6 @@ export function useStaffDashboard() {
     latestActivity: data?.latestActivity || [],
     isLoading,
     isError,
-    error
+    error,
   };
-} 
+}

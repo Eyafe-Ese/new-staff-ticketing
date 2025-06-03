@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import api from '@/utils/api';
-import { Complaint } from './useComplaints';
+import { useQuery } from "@tanstack/react-query";
+import api from "@/utils/api";
+import { Complaint } from "./useComplaints";
 
 interface ComplaintResponse {
   data: Complaint;
@@ -19,7 +19,7 @@ export function useComplaint(id: string) {
   };
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['complaint', id],
+    queryKey: ["complaint", id],
     queryFn: fetchComplaint,
     enabled: !!id, // Only run query if ID is provided
   });
@@ -29,6 +29,6 @@ export function useComplaint(id: string) {
     isLoading,
     isError,
     error,
-    refetch
+    refetch,
   };
-} 
+}

@@ -47,12 +47,17 @@ interface UserProfile {
 // Define the profile form schema
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  email: z.string().email({ message: "Please enter a valid email address" }).optional(),
-  phone: z.string()
-    .refine(val => !val || /^\+?[0-9]{10,15}$/.test(val.trim()), {
-      message: "Phone number must be valid (10-15 digits, optionally with + prefix)"
+  email: z
+    .string()
+    .email({ message: "Please enter a valid email address" })
+    .optional(),
+  phone: z
+    .string()
+    .refine((val) => !val || /^\+?[0-9]{10,15}$/.test(val.trim()), {
+      message:
+        "Phone number must be valid (10-15 digits, optionally with + prefix)",
     })
-    .transform(val => val ? val.trim() : val)
+    .transform((val) => (val ? val.trim() : val))
     .optional(),
 });
 
@@ -110,10 +115,10 @@ export default function ProfilePage() {
     const fetchUserData = async () => {
       setIsLoading(true);
       try {
-        const response = await api.get('/users/me');
+        const response = await api.get("/users/me");
         const userData = response.data.data || response.data;
         setUser(userData);
-        
+
         // Reset form with fetched user data
         profileForm.reset({
           name: userData.name || "",
@@ -128,7 +133,7 @@ export default function ProfilePage() {
       } catch (error) {
         console.error("Error fetching user data:", error);
         toast.error("Failed to load user profile");
-        
+
         // Fallback to redux store data
         if (userFromStore) {
           setUser(userFromStore as UserProfile);
@@ -137,7 +142,7 @@ export default function ProfilePage() {
             email: userFromStore.email || "",
             phone: (userFromStore as UserProfile).phone || "",
           });
-          
+
           if (userFromStore.avatarUrl) {
             setAvatarPreview(userFromStore.avatarUrl);
           }
@@ -161,19 +166,20 @@ export default function ProfilePage() {
     };
 
     // Call the API to update user profile
-    api.patch('/users/me', updatePayload)
-      .then(response => {
+    api
+      .patch("/users/me", updatePayload)
+      .then((response) => {
         setUser(response.data.data || response.data);
         toast.success("Profile updated successfully");
       })
-      .catch(error => {
+      .catch((error) => {
         console.error("Error updating profile:", error);
         // Display specific validation errors if available
         if (error.response?.data?.error?.message) {
-          const messages = Array.isArray(error.response.data.error.message) 
-            ? error.response.data.error.message 
+          const messages = Array.isArray(error.response.data.error.message)
+            ? error.response.data.error.message
             : [error.response.data.error.message];
-          
+
           messages.forEach((msg: string) => toast.error(msg));
         } else {
           toast.error("Failed to update profile");
@@ -189,17 +195,20 @@ export default function ProfilePage() {
     setIsUpdatingPassword(true);
 
     // Call the API to update password
-    api.put('/users/password', {
-      currentPassword: data.currentPassword,
-      newPassword: data.newPassword
-    })
+    api
+      .put("/users/password", {
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+      })
       .then(() => {
         toast.success("Password updated successfully");
         passwordForm.reset();
       })
-      .catch(error => {
+      .catch((error) => {
         console.error("Error updating password:", error);
-        toast.error(error.response?.data?.message || "Failed to update password");
+        toast.error(
+          error.response?.data?.message || "Failed to update password"
+        );
       })
       .finally(() => {
         setIsUpdatingPassword(false);
@@ -226,23 +235,24 @@ export default function ProfilePage() {
     if (!avatarFile) return;
 
     const formData = new FormData();
-    formData.append('avatar', avatarFile);
+    formData.append("avatar", avatarFile);
 
-    api.post('/users/avatar', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
-      .then(response => {
+    api
+      .post("/users/avatar", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      .then((response) => {
         const updatedUser = response.data.data || response.data;
-        setUser(prevUser => ({
+        setUser((prevUser) => ({
           ...prevUser!,
-          avatarUrl: updatedUser.avatarUrl
+          avatarUrl: updatedUser.avatarUrl,
         }));
         toast.success("Avatar uploaded successfully");
         setAvatarFile(null);
       })
-      .catch(error => {
+      .catch((error) => {
         console.error("Error uploading avatar:", error);
         toast.error("Failed to upload avatar");
       });

@@ -1,10 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -12,9 +26,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import Image from "next/image";
 
-const emailSchema = z.object({ email: z.string().email({ message: "Please enter a valid email address" }) });
-const otpSchema = z.object({ otp: z.string().min(4, { message: "Enter the OTP sent to your email" }) });
-const passwordSchema = z.object({ password: z.string().min(6, { message: "Password must be at least 6 characters" }) });
+const emailSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address" }),
+});
+const otpSchema = z.object({
+  otp: z.string().min(4, { message: "Enter the OTP sent to your email" }),
+});
+const passwordSchema = z.object({
+  password: z
+    .string()
+    .min(6, { message: "Password must be at least 6 characters" }),
+});
 
 type EmailForm = z.infer<typeof emailSchema>;
 type OtpForm = z.infer<typeof otpSchema>;
@@ -58,7 +80,8 @@ export default function ForgotPasswordPage() {
     setError(null);
     // Simulate API call
     setTimeout(() => {
-      if (data.otp === "1234") { // For demo, accept 1234 as valid OTP
+      if (data.otp === "1234") {
+        // For demo, accept 1234 as valid OTP
         setStep(3);
       } else {
         setError("Invalid OTP. Please try again.");
@@ -80,16 +103,18 @@ export default function ForgotPasswordPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 flex flex-col items-center">
           <div className="relative w-12 h-12 mb-2">
-            <Image 
-              src="/logo.png" 
-              alt="GTCO Logo" 
+            <Image
+              src="/logo.png"
+              alt="GTCO Logo"
               fill
               sizes="48px"
-              style={{ objectFit: 'contain' }}
+              style={{ objectFit: "contain" }}
               priority
             />
           </div>
-          <CardTitle className="text-2xl font-bold text-primary">Forgot Password</CardTitle>
+          <CardTitle className="text-2xl font-bold text-primary">
+            Forgot Password
+          </CardTitle>
           <CardDescription>
             {step === 1 && "Enter your email to reset your password"}
             {step === 2 && `Enter the OTP sent to ${email}`}
@@ -124,7 +149,9 @@ export default function ForgotPasswordPage() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full">Send OTP</Button>
+                <Button type="submit" className="w-full">
+                  Send OTP
+                </Button>
               </form>
             </Form>
           )}
@@ -144,7 +171,9 @@ export default function ForgotPasswordPage() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full">Verify OTP</Button>
+                <Button type="submit" className="w-full">
+                  Verify OTP
+                </Button>
               </form>
             </Form>
           )}
@@ -158,20 +187,32 @@ export default function ForgotPasswordPage() {
                     <FormItem>
                       <FormLabel>New Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="New password" {...field} />
+                        <Input
+                          type="password"
+                          placeholder="New password"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full">Set New Password</Button>
+                <Button type="submit" className="w-full">
+                  Set New Password
+                </Button>
               </form>
             </Form>
           )}
           {step === 4 && (
             <div className="text-center space-y-4">
               <Alert variant="success">
-                <AlertDescription>Password reset successful! You can now <Link href="/login" className="text-primary underline">sign in</Link>.</AlertDescription>
+                <AlertDescription>
+                  Password reset successful! You can now{" "}
+                  <Link href="/login" className="text-primary underline">
+                    sign in
+                  </Link>
+                  .
+                </AlertDescription>
               </Alert>
             </div>
           )}
@@ -184,4 +225,4 @@ export default function ForgotPasswordPage() {
       </Card>
     </div>
   );
-} 
+}
