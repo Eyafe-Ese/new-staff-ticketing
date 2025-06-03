@@ -198,8 +198,13 @@ const AttachmentModal = ({
   );
 };
 
-// Add status color mapping
-const getStatusColor = (statusCode: string) => {
+// Add status type
+type StatusCode = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | 'PENDING' | 'REJECTED';
+
+// Update status color mapping with proper typing
+const getStatusColor = (statusCode: StatusCode | undefined | null) => {
+  if (!statusCode) return 'bg-gray-100 text-gray-700 border-gray-200';
+  
   switch (statusCode) {
     case 'OPEN':
       return 'bg-blue-100 text-blue-700 border-blue-200';
@@ -218,8 +223,10 @@ const getStatusColor = (statusCode: string) => {
   }
 };
 
-// Add status description mapping
-const getStatusDescription = (statusCode: string) => {
+// Update status description mapping with proper typing
+const getStatusDescription = (statusCode: StatusCode | undefined | null) => {
+  if (!statusCode) return 'Unknown status';
+  
   switch (statusCode) {
     case 'OPEN':
       return 'Ticket is open and awaiting assignment';
@@ -510,10 +517,10 @@ export default function TicketDetailPage() {
     }
   };
 
-  // Add helper function to check if ticket is closed or resolved
+  // Update the helper function to use the StatusCode type
   const isTicketClosedOrResolved = useCallback(() => {
     if (!complaint) return false;
-    const status = complaint.statusEntity?.code || complaint.status;
+    const status = (complaint.statusEntity?.code || complaint.status) as StatusCode | undefined;
     return status === 'CLOSED' || status === 'RESOLVED';
   }, [complaint]);
 
@@ -592,7 +599,7 @@ export default function TicketDetailPage() {
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <span
                   className={`px-2 py-1 rounded-full text-xs font-medium border ${
-                    getStatusColor(complaint.statusEntity?.code || complaint.status)
+                    getStatusColor(complaint.statusEntity?.code as StatusCode)
                   }`}
                 >
                   {complaint.statusEntity?.name || complaint.status}
@@ -895,13 +902,13 @@ export default function TicketDetailPage() {
                 {/* Show message when ticket is closed/resolved */}
                 {isTicketClosedOrResolved() && (
                   <div className={`text-sm mt-4 p-3 rounded-md border ${
-                    getStatusColor(complaint.statusEntity?.code || complaint.status)
+                    getStatusColor(complaint.statusEntity?.code as StatusCode)
                   }`}>
                     <p className="flex items-center gap-2">
                       <span>🔒</span>
                       <span>
                         This ticket is {complaint.statusEntity?.name.toLowerCase()}. 
-                        {getStatusDescription(complaint.statusEntity?.code || complaint.status)}
+                        {getStatusDescription(complaint.statusEntity?.code as StatusCode)}
                       </span>
                     </p>
                   </div>
@@ -920,7 +927,7 @@ export default function TicketDetailPage() {
                   <dd>
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium border ${
-                        getStatusColor(complaint.statusEntity?.code || complaint.status)
+                        getStatusColor(complaint.statusEntity?.code as StatusCode)
                       }`}
                     >
                       {complaint.statusEntity?.name || complaint.status}
