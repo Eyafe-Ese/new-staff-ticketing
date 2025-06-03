@@ -2,10 +2,10 @@
 
 import { useState, useEffect, MouseEvent } from "react";
 import { useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoleCheck } from "@/hooks/useRoleCheck";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -22,47 +22,32 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import { useComplaintCategories } from "@/hooks/useComplaintCategories";
 import { useDepartments } from "@/hooks/useDepartments";
 import { useComplaintStatuses } from "@/hooks/useComplaintStatuses";
 import { Loader2 } from "lucide-react";
-import api from "@/utils/api";
-
-// Define ticket interface
-interface Ticket {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  priority: string;
-  category: string;
-  department: string;
-  createdAt: string;
-  updatedAt: string;
-  assignedTo?: {
-    id: string;
-    name: string;
-  };
-  createdBy: {
-    id: string;
-    name: string;
-  };
-  statusEntity?: {
-    code: string;
-    name: string;
-  };
-  priorityEntity?: {
-    code: string;
-    name: string;
-  };
-  categoryEntity?: {
-    type: string;
-  };
-  departmentEntity?: {
-    name: string;
-  };
-}
+import {
+  getTickets,
+  updateTicketStatus,
+  assignTicketToMe,
+  reassignTicket,
+  forceCloseTicket,
+  addTicketComment,
+  type Ticket,
+  type TicketFilters,
+} from "@/utils/ticketApi";
 
 // Define priority options
 const priorityOptions = [
@@ -75,6 +60,8 @@ const priorityOptions = [
 export default function TicketsPage() {
   const { hasRole } = useRoleCheck();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
   const [status, setStatus] = useState("all");
   const [category, setCategory] = useState("all");
   const [department, setDepartment] = useState("all");
@@ -82,48 +69,93 @@ export default function TicketsPage() {
   const [anonymous, setAnonymous] = useState(false);
   const [search, setSearch] = useState("");
   const [assignedToMe, setAssignedToMe] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [comment, setComment] = useState("");
+  const [closeReason, setCloseReason] = useState("");
 
   // Fetch data from APIs
   const { complaintCategories, isLoading: categoriesLoading } = useComplaintCategories();
   const { departments, isLoading: departmentsLoading } = useDepartments();
   const { complaintStatuses, isLoading: statusesLoading } = useComplaintStatuses();
 
-  // Fetch tickets based on filters and role
+  // Prepare filters
+  const filters: TicketFilters = {
+    status: status !== "all" ? status : undefined,
+    category: category !== "all" ? category : undefined,
+    department: department !== "all" ? department : undefined,
+    priority: priority !== "all" ? priority : undefined,
+    search: search || undefined,
+    assignedToMe: assignedToMe || undefined,
+    anonymous: anonymous || undefined,
+    page,
+    limit: 10,
+  };
+
+  // Add role-based filtering
+  if (hasRole("it_officer")) {
+    filters.department = "IT";
+  } else if (hasRole("hr_admin")) {
+    filters.department = "HR";
+  }
+
+  // Fetch tickets
   const {
     data: tickets,
     isLoading,
     isError,
-    refetch,
   } = useQuery({
-    queryKey: ["tickets", status, category, department, priority, search, assignedToMe],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (status !== "all") params.append("status", status);
-      if (category !== "all") params.append("category", category);
-      if (department !== "all") params.append("department", department);
-      if (priority !== "all") params.append("priority", priority);
-      if (search) params.append("search", search);
-      if (assignedToMe) params.append("assignedToMe", "true");
-      if (anonymous) params.append("anonymous", "true");
+    queryKey: ["tickets", filters],
+    queryFn: () => getTickets(filters),
+  });
 
-      // Add role-based filtering
-      if (hasRole("it_officer")) {
-        params.append("department", "IT");
-      } else if (hasRole("hr_admin")) {
-        params.append("department", "HR");
-      }
+  // Mutations
+  const statusMutation = useMutation({
+    mutationFn: ({ ticketId, status }: { ticketId: string; status: string }) =>
+      updateTicketStatus(ticketId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+    },
+  });
 
-      const response = await api.get(
-        `/complaints${params.toString() ? `?${params.toString()}` : ""}`
-      );
-      return response.data;
+  const assignMutation = useMutation({
+    mutationFn: assignTicketToMe,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+    },
+  });
+
+  const reassignMutation = useMutation({
+    mutationFn: ({ ticketId, userId }: { ticketId: string; userId: string }) =>
+      reassignTicket(ticketId, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+    },
+  });
+
+  const closeMutation = useMutation({
+    mutationFn: ({ ticketId, reason }: { ticketId: string; reason: string }) =>
+      forceCloseTicket(ticketId, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      setCloseReason("");
+      setSelectedTicket(null);
+    },
+  });
+
+  const commentMutation = useMutation({
+    mutationFn: ({ ticketId, comment }: { ticketId: string; comment: string }) =>
+      addTicketComment(ticketId, comment),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      setComment("");
+      setSelectedTicket(null);
     },
   });
 
   // Auto-apply filters when they change
   useEffect(() => {
-    refetch();
-  }, [status, category, department, priority, search, assignedToMe, anonymous, refetch]);
+    setPage(1); // Reset to first page when filters change
+  }, [status, category, department, priority, search, assignedToMe, anonymous]);
 
   // Handle clear filters
   const handleClearFilters = () => {
@@ -134,10 +166,8 @@ export default function TicketsPage() {
     setAnonymous(false);
     setSearch("");
     setAssignedToMe(false);
+    setPage(1);
   };
-
-  // Get current page data
-  const currentData = tickets?.data || [];
 
   // Handle row click
   const handleRowClick = (ticketId: string) => {
@@ -149,6 +179,9 @@ export default function TicketsPage() {
     e.stopPropagation();
     action();
   };
+
+  // Get current page data
+  const currentData = tickets?.data || [];
 
   return (
     <div className="space-y-6">
@@ -184,8 +217,8 @@ export default function TicketsPage() {
                   complaintStatuses.map((status: { id: string; name: string }) => (
                     <SelectItem key={status.id} value={status.id}>
                       {status.name}
-                    </SelectItem>
-                  ))}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -360,7 +393,7 @@ export default function TicketsPage() {
                           }`}
                         >
                           {ticket.priorityEntity?.name || "Unknown"}
-                        </span>
+                      </span>
                       </TableCell>
                       <TableCell>{ticket.categoryEntity?.type || "Unknown"}</TableCell>
                       {hasRole("hr_admin") && (
@@ -370,24 +403,78 @@ export default function TicketsPage() {
                       <TableCell>{new Date(ticket.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Link
-                            href={`/tickets/${ticket.id}`}
+                      <Link
+                        href={`/tickets/${ticket.id}`}
                             className="text-primary hover:underline"
                             onClick={(e: MouseEvent) => handleActionClick(e, () => {})}
-                          >
-                            View
-                          </Link>
+                      >
+                        View
+                      </Link>
                           {hasRole("staff") && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              title="Add Comment"
-                              onClick={(e: MouseEvent) => handleActionClick(e, () => {
-                                // TODO: Implement add comment
-                              })}
-                            >
-                              💬
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  title="Add Comment"
+                                  onClick={(e: MouseEvent) => handleActionClick(e, () => {
+                                    setSelectedTicket(ticket);
+                                  })}
+                                >
+                          💬
+                        </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Add Comment</DialogTitle>
+                                  <DialogDescription>
+                                    Add a comment to ticket {ticket.id}
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                  <div className="grid gap-2">
+                                    <Label htmlFor="comment">Comment</Label>
+                                    <Textarea
+                                      id="comment"
+                                      value={comment}
+                                      onChange={(e) => setComment(e.target.value)}
+                                      placeholder="Enter your comment..."
+                                    />
+                                  </div>
+                                </div>
+                                <DialogFooter>
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                      setComment("");
+                                      setSelectedTicket(null);
+                                    }}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    onClick={() => {
+                                      if (comment.trim()) {
+                                        commentMutation.mutate({
+                                          ticketId: ticket.id,
+                                          comment: comment.trim(),
+                                        });
+                                      }
+                                    }}
+                                    disabled={!comment.trim() || commentMutation.isPending}
+                                  >
+                                    {commentMutation.isPending ? (
+                                      <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Adding...
+                                      </>
+                                    ) : (
+                                      "Add Comment"
+                                    )}
                             </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
                           )}
                           {hasRole("it_officer") && (
                             <>
@@ -395,73 +482,182 @@ export default function TicketsPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={(e: MouseEvent) => handleActionClick(e, () => {
-                                    // TODO: Implement assign to me
-                                  })}
+                                  onClick={(e: MouseEvent) =>
+                                    handleActionClick(e, () => {
+                                      assignMutation.mutate(ticket.id);
+                                    })
+                                  }
+                                  disabled={assignMutation.isPending}
                                 >
-                                  Assign to Me
+                                  {assignMutation.isPending ? (
+                                    <>
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      Assigning...
+                                    </>
+                                  ) : (
+                                    "Assign to Me"
+                                  )}
                                 </Button>
                               )}
                               <Select
                                 defaultValue={ticket.status}
                                 onValueChange={(value) => {
-                                  // TODO: Implement status change
+                                  statusMutation.mutate({
+                                    ticketId: ticket.id,
+                                    status: value,
+                                  });
                                 }}
                               >
-                                <SelectTrigger className="w-28">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
+                            <SelectTrigger className="w-28">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
                                   <SelectItem value="in_progress">In Progress</SelectItem>
                                   <SelectItem value="on_hold">On Hold</SelectItem>
                                   <SelectItem value="resolved">Resolved</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </>
-                          )}
+                            </SelectContent>
+                          </Select>
+                        </>
+                      )}
                           {hasRole("hr_admin") && (
                             <>
                               <Select
                                 defaultValue={ticket.status}
                                 onValueChange={(value) => {
-                                  // TODO: Implement status change
+                                  statusMutation.mutate({
+                                    ticketId: ticket.id,
+                                    status: value,
+                                  });
                                 }}
                               >
-                                <SelectTrigger className="w-28">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
+                            <SelectTrigger className="w-28">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
                                   <SelectItem value="new">New</SelectItem>
                                   <SelectItem value="in_progress">In Progress</SelectItem>
                                   <SelectItem value="on_hold">On Hold</SelectItem>
                                   <SelectItem value="resolved">Resolved</SelectItem>
                                   <SelectItem value="closed">Closed</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e: MouseEvent) => handleActionClick(e, () => {
-                                  // TODO: Implement reassign
-                                })}
-                              >
-                                Reassign
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={(e: MouseEvent) => handleActionClick(e, () => {
-                                  // TODO: Implement force close
-                                })}
-                              >
-                                Force Close
-                              </Button>
-                            </>
-                          )}
+                            </SelectContent>
+                          </Select>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e: MouseEvent) =>
+                                      handleActionClick(e, () => {
+                                        setSelectedTicket(ticket);
+                                      })
+                                    }
+                                  >
+                            Reassign
+                          </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Reassign Ticket</DialogTitle>
+                                    <DialogDescription>
+                                      Reassign ticket {ticket.id} to another user
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="grid gap-4 py-4">
+                                    <div className="grid gap-2">
+                                      <Label htmlFor="user">Select User</Label>
+                                      <Select
+                                        onValueChange={(userId) => {
+                                          reassignMutation.mutate({
+                                            ticketId: ticket.id,
+                                            userId,
+                                          });
+                                        }}
+                                      >
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Select a user" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {/* TODO: Add user list */}
+                                          <SelectItem value="user1">User 1</SelectItem>
+                                          <SelectItem value="user2">User 2</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={(e: MouseEvent) =>
+                                      handleActionClick(e, () => {
+                                        setSelectedTicket(ticket);
+                                      })
+                                    }
+                                  >
+                            Force Close
+                          </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Force Close Ticket</DialogTitle>
+                                    <DialogDescription>
+                                      Close ticket {ticket.id} with a reason
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="grid gap-4 py-4">
+                                    <div className="grid gap-2">
+                                      <Label htmlFor="reason">Reason</Label>
+                                      <Textarea
+                                        id="reason"
+                                        value={closeReason}
+                                        onChange={(e) => setCloseReason(e.target.value)}
+                                        placeholder="Enter reason for closing..."
+                                      />
+                                    </div>
+                                  </div>
+                                  <DialogFooter>
+                                    <Button
+                                      variant="outline"
+                                      onClick={() => {
+                                        setCloseReason("");
+                                        setSelectedTicket(null);
+                                      }}
+                                    >
+                                      Cancel
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      onClick={() => {
+                                        if (closeReason.trim()) {
+                                          closeMutation.mutate({
+                                            ticketId: ticket.id,
+                                            reason: closeReason.trim(),
+                                          });
+                                        }
+                                      }}
+                                      disabled={!closeReason.trim() || closeMutation.isPending}
+                                    >
+                                      {closeMutation.isPending ? (
+                                        <>
+                                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                          Closing...
+                                        </>
+                                      ) : (
+                                        "Close Ticket"
+                                      )}
+                                    </Button>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
+                        </>
+                      )}
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                ))}
                 </TableBody>
               </Table>
             </div>
@@ -470,29 +666,31 @@ export default function TicketsPage() {
       </Card>
 
       {/* Pagination */}
-      <div className="flex justify-end mt-4">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!tickets?.pagination?.hasPrevious}
-          onClick={() => {
-            // TODO: Implement pagination
-          }}
-        >
+      {tickets?.pagination && (
+        <div className="flex justify-between items-center mt-4">
+          <div className="text-sm text-muted-foreground">
+            Showing {currentData.length} of {tickets.pagination.total} tickets
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!tickets.pagination.hasPrevious}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
           Previous
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="ml-2"
-          disabled={!tickets?.pagination?.hasNext}
-          onClick={() => {
-            // TODO: Implement pagination
-          }}
-        >
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!tickets.pagination.hasNext}
+              onClick={() => setPage((p) => p + 1)}
+            >
           Next
         </Button>
       </div>
+        </div>
+      )}
     </div>
   );
 }

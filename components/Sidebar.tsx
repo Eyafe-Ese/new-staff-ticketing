@@ -36,26 +36,26 @@ const navItems = [
     minRole: 'staff' as UserRole,
   },
   {
-    title: 'IT Tickets',
-    href: '/it-tickets',
+    title: 'Tickets',
+    href: '/tickets',
     icon: Package,
     minRole: 'it_officer' as UserRole,
     subItems: [
       {
         title: 'All Tickets',
-        href: '/it-tickets',
+        href: '/tickets',
       },
       {
         title: 'Assigned to Me',
-        href: '/it-tickets?assigned=me',
+        href: '/tickets?assigned=me',
       },
       {
         title: 'New Tickets',
-        href: '/it-tickets?status=new',
+        href: '/tickets?status=new',
       },
       {
         title: 'In Progress',
-        href: '/it-tickets?status=in_progress',
+        href: '/tickets?status=in_progress',
       },
     ],
   },
