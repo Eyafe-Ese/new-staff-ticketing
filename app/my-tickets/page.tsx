@@ -11,6 +11,30 @@ import { useComplaintStatuses } from "@/hooks/useComplaintStatuses";
 import { useComplaints } from "@/hooks/useComplaints";
 import { Loader2 } from "lucide-react";
 
+// Add status type and color mapping
+type StatusCode = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | 'PENDING' | 'REJECTED';
+
+const getStatusColor = (statusCode: StatusCode | undefined | null) => {
+  if (!statusCode) return 'bg-gray-100 text-gray-700 border-gray-200';
+  
+  switch (statusCode) {
+    case 'OPEN':
+      return 'bg-blue-100 text-blue-700 border-blue-200';
+    case 'IN_PROGRESS':
+      return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+    case 'RESOLVED':
+      return 'bg-green-100 text-green-700 border-green-200';
+    case 'CLOSED':
+      return 'bg-gray-100 text-gray-700 border-gray-200';
+    case 'PENDING':
+      return 'bg-purple-100 text-purple-700 border-purple-200';
+    case 'REJECTED':
+      return 'bg-red-100 text-red-700 border-red-200';
+    default:
+      return 'bg-gray-100 text-gray-700 border-gray-200';
+  }
+};
+
 export default function MyTicketsPage() {
   const [statusId, setStatusId] = useState("all");
   const [categoryId, setCategoryId] = useState("all");
@@ -136,7 +160,6 @@ export default function MyTicketsPage() {
                   <th className="p-3 text-left">Ticket ID</th>
                   <th className="p-3 text-left w-[300px]">Title</th>
                   <th className="p-3 text-left w-[150px]">Category</th>
-                  <th className="p-3 text-left w-[150px]">Department</th>
                   <th className="p-3 text-left">Status</th>
                   <th className="p-3 text-left">Updated At</th>
                 </tr>
@@ -155,11 +178,10 @@ export default function MyTicketsPage() {
                     <td className="p-3 max-w-[150px] truncate" title={complaint.categoryEntity?.type?.toUpperCase() || 'N/A'}>
                       {complaint.categoryEntity?.type?.toUpperCase() || 'N/A'}
                     </td>
-                    <td className="p-3 max-w-[150px] truncate" title={complaint.department?.name || 'N/A'}>
-                      {complaint.department?.name || 'N/A'}
-                    </td>
                     <td className="p-3">
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
+                        getStatusColor(complaint.statusEntity?.code as StatusCode)
+                      }`}>
                         {complaint.statusEntity?.name || complaint.status}
                       </span>
                     </td>
