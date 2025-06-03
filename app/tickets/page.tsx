@@ -72,6 +72,7 @@ export default function TicketsPage() {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [comment, setComment] = useState("");
   const [closeReason, setCloseReason] = useState("");
+  const [assigningTickets, setAssigningTickets] = useState<Record<string, boolean>>({});
 
   // Fetch data from APIs
   const { complaintCategories, isLoading: categoriesLoading } = useComplaintCategories();
@@ -110,15 +111,23 @@ export default function TicketsPage() {
 
   // Mutations
   const statusMutation = useMutation({
-    mutationFn: ({ ticketId, status }: { ticketId: string; status: string }) =>
-      updateTicketStatus(ticketId, status),
+    mutationFn: ({ ticketId, statusId }: { ticketId: string; statusId: string }) =>
+      updateTicketStatus(ticketId, statusId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
     },
   });
 
   const assignMutation = useMutation({
-    mutationFn: assignTicketToMe,
+    mutationFn: async (ticketId: string) => {
+      setAssigningTickets(prev => ({ ...prev, [ticketId]: true }));
+      try {
+        const result = await assignTicketToMe(ticketId);
+        return result;
+      } finally {
+        setAssigningTickets(prev => ({ ...prev, [ticketId]: false }));
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
     },
@@ -418,9 +427,9 @@ export default function TicketsPage() {
                                       assignMutation.mutate(ticket.id);
                                     })
                                   }
-                                  disabled={assignMutation.isPending}
+                                  disabled={assigningTickets[ticket.id]}
                                 >
-                                  {assignMutation.isPending ? (
+                                  {assigningTickets[ticket.id] ? (
                                     <>
                                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                       Assigning...
@@ -431,11 +440,11 @@ export default function TicketsPage() {
                                 </Button>
                               )}
                               <Select
-                                defaultValue={ticket.status}
-                                onValueChange={(value) => {
+                                defaultValue={ticket.statusId}
+                                onValueChange={(statusId) => {
                                   statusMutation.mutate({
                                     ticketId: ticket.id,
-                                    status: value,
+                                    statusId,
                                   });
                                 }}
                               >
@@ -443,9 +452,15 @@ export default function TicketsPage() {
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="in_progress">In Progress</SelectItem>
-                                  <SelectItem value="on_hold">On Hold</SelectItem>
-                                  <SelectItem value="resolved">Resolved</SelectItem>
+                                  {complaintStatuses
+                                    .filter(status => 
+                                      ["IN_PROGRESS", "ON_HOLD", "RESOLVED"].includes(status.code)
+                                    )
+                                    .map(status => (
+                                      <SelectItem key={status.id} value={status.id}>
+                                        {status.name}
+                                      </SelectItem>
+                                    ))}
                                 </SelectContent>
                               </Select>
                             </>
@@ -453,11 +468,11 @@ export default function TicketsPage() {
                           {hasRole("hr_admin") && (
                             <>
                               <Select
-                                defaultValue={ticket.status}
-                                onValueChange={(value) => {
+                                defaultValue={ticket.statusId}
+                                onValueChange={(statusId) => {
                                   statusMutation.mutate({
                                     ticketId: ticket.id,
-                                    status: value,
+                                    statusId,
                                   });
                                 }}
                               >
@@ -465,11 +480,15 @@ export default function TicketsPage() {
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="new">New</SelectItem>
-                                  <SelectItem value="in_progress">In Progress</SelectItem>
-                                  <SelectItem value="on_hold">On Hold</SelectItem>
-                                  <SelectItem value="resolved">Resolved</SelectItem>
-                                  <SelectItem value="closed">Closed</SelectItem>
+                                  {complaintStatuses
+                                    .filter(status => 
+                                      ["NEW", "IN_PROGRESS", "ON_HOLD", "RESOLVED", "CLOSED"].includes(status.code)
+                                    )
+                                    .map(status => (
+                                      <SelectItem key={status.id} value={status.id}>
+                                        {status.name}
+                                      </SelectItem>
+                                    ))}
                                 </SelectContent>
                               </Select>
                               <Dialog>

@@ -7,6 +7,7 @@ export interface Ticket {
   title: string;
   description: string;
   status: string;
+  statusId: string;
   priority: string;
   category: string;
   department: string;
@@ -21,6 +22,7 @@ export interface Ticket {
     name: string;
   };
   statusEntity?: {
+    id: string;
     code: string;
     name: string;
   };
@@ -78,9 +80,9 @@ export const getTickets = async (filters: TicketFilters = {}): Promise<TicketRes
   }
 };
 
-export const updateTicketStatus = async (ticketId: string, status: string): Promise<Ticket> => {
+export const updateTicketStatus = async (ticketId: string, statusId: string): Promise<Ticket> => {
   try {
-    const response = await api.patch(`/complaints/${ticketId}/status`, { status });
+    const response = await api.patch(`/complaints/${ticketId}`, { statusId });
     toast.success("Ticket status updated");
     return response.data;
   } catch (error) {
@@ -92,7 +94,15 @@ export const updateTicketStatus = async (ticketId: string, status: string): Prom
 
 export const assignTicketToMe = async (ticketId: string): Promise<Ticket> => {
   try {
-    const response = await api.post(`/complaints/${ticketId}/assign`);
+    // Get current user ID from the auth state
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!currentUser?.id) {
+      throw new Error('User not authenticated');
+    }
+
+    const response = await api.patch(`/complaints/${ticketId}`, {
+      assignedToId: currentUser.id
+    });
     toast.success("Ticket assigned to you");
     return response.data;
   } catch (error) {
@@ -104,7 +114,9 @@ export const assignTicketToMe = async (ticketId: string): Promise<Ticket> => {
 
 export const reassignTicket = async (ticketId: string, userId: string): Promise<Ticket> => {
   try {
-    const response = await api.post(`/complaints/${ticketId}/reassign`, { userId });
+    const response = await api.patch(`/complaints/${ticketId}`, {
+      assignedToId: userId
+    });
     toast.success("Ticket reassigned");
     return response.data;
   } catch (error) {
