@@ -74,7 +74,7 @@ export function Header({
     if (pathname === "/users") return "Users";
     if (pathname === "/settings") return "Settings";
     if (pathname.startsWith("/my-tickets/")) return "Ticket Details";
-    if (pathname === "/track-complaint") return "Track Complaint";
+    if (pathname === "/track-complaint") return "Track Anonymous Complaint";
     return "Complaint Portal";
   };
 
