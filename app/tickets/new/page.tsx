@@ -35,7 +35,6 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Loader2, Upload, X, Check, Copy, AlertTriangle } from "lucide-react";
 import { useComplaintCategories } from "@/hooks/useComplaintCategories";
-import { useDepartments } from "@/hooks/useDepartments";
 import { createFileUploadRequest } from "@/utils/api";
 import Link from "next/link";
 import {
@@ -59,7 +58,6 @@ const formSchema = z.object({
     .min(20, { message: "Description must be at least 20 characters" })
     .max(2000, { message: "Description cannot exceed 2000 characters" }),
   categoryId: z.string({ required_error: "Please select a category" }),
-  departmentId: z.string().optional(),
   isAnonymous: z.boolean().default(false),
 });
 
@@ -77,19 +75,15 @@ export default function NewTicketPage() {
   const [isCopied, setIsCopied] = useState(false);
   const [showTokenModal, setShowTokenModal] = useState(false);
 
-  // Fetch categories and departments from API
-  const { complaintCategories, isLoading: categoriesLoading } =
-    useComplaintCategories();
-  const { departments, isLoading: departmentsLoading } = useDepartments();
+  // Fetch categories from API
+  const { complaintCategories, isLoading: categoriesLoading } = useComplaintCategories();
 
   const form = useForm<FormValues>({
-    // Using type assertion due to complex type incompatibilities with react-hook-form and zod
     resolver: zodResolver(formSchema) as unknown as Resolver<FormValues>,
     defaultValues: {
       title: "",
       description: "",
       categoryId: "",
-      departmentId: "",
       isAnonymous: false,
     },
   });
@@ -109,26 +103,26 @@ export default function NewTicketPage() {
       formData.append("categoryId", values.categoryId);
       formData.append("isAnonymous", values.isAnonymous.toString());
 
-      // Add department only if selected
-      if (values.departmentId) {
-        formData.append("departmentId", values.departmentId);
+      // Only show upload progress if there are attachments
+      const hasAttachments = attachments.length > 0;
+      let loadingToast: string | number | undefined;
+
+      // Add file attachments if any
+      if (hasAttachments) {
+        attachments.forEach((file) => {
+          formData.append("files", file);
+        });
+        // Show upload toast only if there are attachments
+        loadingToast = toast.loading("Uploading complaint and attachments...");
+      } else {
+        loadingToast = toast.loading("Submitting complaint...");
       }
-
-      // Add file attachments
-      attachments.forEach((file) => {
-        formData.append("files", file);
-      });
-
-      // Show toast indicating upload has started
-      const loadingToast = toast.loading(
-        "Uploading complaint and attachments..."
-      );
 
       // Use the file upload utility with extended timeout and progress tracking
       const response = await createFileUploadRequest(
         "/complaints/with-attachments",
         formData,
-        {
+        hasAttachments ? {
           onUploadProgress: (progressEvent: AxiosProgressEvent) => {
             if (progressEvent.total) {
               const percentCompleted = Math.round(
@@ -136,11 +130,10 @@ export default function NewTicketPage() {
               );
               setUploadProgress(percentCompleted);
             } else {
-              // If total is undefined, just show that upload is in progress
-              setUploadProgress(-1); // Use a special value to indicate indeterminate progress
+              setUploadProgress(-1);
             }
           },
-        }
+        } : undefined
       );
 
       // Dismiss the loading toast
@@ -357,7 +350,7 @@ export default function NewTicketPage() {
                 )}
               />
 
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid gap-6">
                 <FormField
                   control={form.control}
                   name="categoryId"
@@ -387,47 +380,6 @@ export default function NewTicketPage() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="departmentId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Department (Optional)</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue
-                              placeholder={
-                                departmentsLoading
-                                  ? "Loading departments..."
-                                  : "Select a department"
-                              }
-                            />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {departments.map((department) => (
-                            <SelectItem
-                              key={department.id}
-                              value={department.id}
-                            >
-                              {department.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Select a department to assign this complaint to
-                        (optional)
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -584,7 +536,7 @@ export default function NewTicketPage() {
                 </div>
               )}
 
-              {isSubmitting && (
+              {isSubmitting && attachments.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
                     <span>Upload progress</span>
@@ -620,9 +572,9 @@ export default function NewTicketPage() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {uploadProgress > 0
+                      {attachments.length > 0 && uploadProgress > 0
                         ? `Uploading ${uploadProgress}%`
-                        : uploadProgress === -1
+                        : attachments.length > 0 && uploadProgress === -1
                         ? "Processing..."
                         : "Submitting..."}
                     </>
