@@ -393,9 +393,13 @@ export default function TicketsPage() {
                           }`}
                         >
                           {ticket.priorityEntity?.name || "Unknown"}
-                      </span>
+                        </span>
                       </TableCell>
-                      <TableCell>{ticket.categoryEntity?.type || "Unknown"}</TableCell>
+                      <TableCell>
+                        <span className="font-medium">
+                          {(ticket.categoryEntity?.type || "Unknown").toUpperCase()}
+                        </span>
+                      </TableCell>
                       {hasRole("hr_admin") && (
                         <TableCell>{ticket.departmentEntity?.name || "Unknown"}</TableCell>
                       )}
@@ -403,79 +407,6 @@ export default function TicketsPage() {
                       <TableCell>{new Date(ticket.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                      <Link
-                        href={`/tickets/${ticket.id}`}
-                            className="text-primary hover:underline"
-                            onClick={(e: MouseEvent) => handleActionClick(e, () => {})}
-                      >
-                        View
-                      </Link>
-                          {hasRole("staff") && (
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  title="Add Comment"
-                                  onClick={(e: MouseEvent) => handleActionClick(e, () => {
-                                    setSelectedTicket(ticket);
-                                  })}
-                                >
-                          💬
-                        </Button>
-                              </DialogTrigger>
-                              <DialogContent>
-                                <DialogHeader>
-                                  <DialogTitle>Add Comment</DialogTitle>
-                                  <DialogDescription>
-                                    Add a comment to ticket {ticket.id}
-                                  </DialogDescription>
-                                </DialogHeader>
-                                <div className="grid gap-4 py-4">
-                                  <div className="grid gap-2">
-                                    <Label htmlFor="comment">Comment</Label>
-                                    <Textarea
-                                      id="comment"
-                                      value={comment}
-                                      onChange={(e) => setComment(e.target.value)}
-                                      placeholder="Enter your comment..."
-                                    />
-                                  </div>
-                                </div>
-                                <DialogFooter>
-                                  <Button
-                                    variant="outline"
-                                    onClick={() => {
-                                      setComment("");
-                                      setSelectedTicket(null);
-                                    }}
-                                  >
-                                    Cancel
-                                  </Button>
-                                  <Button
-                                    onClick={() => {
-                                      if (comment.trim()) {
-                                        commentMutation.mutate({
-                                          ticketId: ticket.id,
-                                          comment: comment.trim(),
-                                        });
-                                      }
-                                    }}
-                                    disabled={!comment.trim() || commentMutation.isPending}
-                                  >
-                                    {commentMutation.isPending ? (
-                                      <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Adding...
-                                      </>
-                                    ) : (
-                                      "Add Comment"
-                                    )}
-                            </Button>
-                                </DialogFooter>
-                              </DialogContent>
-                            </Dialog>
-                          )}
                           {hasRole("it_officer") && (
                             <>
                               {!ticket.assignedTo && (
@@ -508,17 +439,17 @@ export default function TicketsPage() {
                                   });
                                 }}
                               >
-                            <SelectTrigger className="w-28">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
+                                <SelectTrigger className="w-28">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
                                   <SelectItem value="in_progress">In Progress</SelectItem>
                                   <SelectItem value="on_hold">On Hold</SelectItem>
                                   <SelectItem value="resolved">Resolved</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </>
-                      )}
+                                </SelectContent>
+                              </Select>
+                            </>
+                          )}
                           {hasRole("hr_admin") && (
                             <>
                               <Select
@@ -530,17 +461,17 @@ export default function TicketsPage() {
                                   });
                                 }}
                               >
-                            <SelectTrigger className="w-28">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
+                                <SelectTrigger className="w-28">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
                                   <SelectItem value="new">New</SelectItem>
                                   <SelectItem value="in_progress">In Progress</SelectItem>
                                   <SelectItem value="on_hold">On Hold</SelectItem>
                                   <SelectItem value="resolved">Resolved</SelectItem>
                                   <SelectItem value="closed">Closed</SelectItem>
-                            </SelectContent>
-                          </Select>
+                                </SelectContent>
+                              </Select>
                               <Dialog>
                                 <DialogTrigger asChild>
                                   <Button
@@ -552,8 +483,8 @@ export default function TicketsPage() {
                                       })
                                     }
                                   >
-                            Reassign
-                          </Button>
+                                    Reassign
+                                  </Button>
                                 </DialogTrigger>
                                 <DialogContent>
                                   <DialogHeader>
@@ -597,8 +528,8 @@ export default function TicketsPage() {
                                       })
                                     }
                                   >
-                            Force Close
-                          </Button>
+                                    Force Close
+                                  </Button>
                                 </DialogTrigger>
                                 <DialogContent>
                                   <DialogHeader>
@@ -652,8 +583,8 @@ export default function TicketsPage() {
                                   </DialogFooter>
                                 </DialogContent>
                               </Dialog>
-                        </>
-                      )}
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
