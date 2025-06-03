@@ -33,15 +33,9 @@ import {
 import { useComplaintAttachments } from "@/hooks/useComplaintAttachments";
 import { useRoleCheck } from "@/hooks/useRoleCheck";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import Image from "next/image";
-import { Attachment } from "@/hooks/useComplaints";
+
 import { format } from "date-fns";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+
 import {
   Select,
   SelectContent,
@@ -61,6 +55,7 @@ import {
 import { Label } from "@/components/ui/label";
 import api from "@/utils/api";
 import { RoleProtectedRoute } from "@/components/RoleProtectedRoute";
+import { useComplaintStatuses } from "@/hooks/useComplaintStatuses";
 
 // Helper function to format dates consistently
 const formatDate = (date: string | Date) => {
@@ -159,6 +154,30 @@ const updateTicketPriority = async (ticketId: string, priorityId: string) => {
 const reassignTicket = async (ticketId: string, assignedToId: string) => {
   const response = await api.patch(`/complaints/${ticketId}`, { assignedToId });
   return response.data;
+};
+
+// Add a new hook for priorities
+const useComplaintPriorities = () => {
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ['complaintPriorities'],
+    queryFn: async () => {
+      const response = await api.get('/complaint-priorities');
+      if (Array.isArray(response.data)) {
+        return response.data;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        return response.data.data;
+      }
+      console.warn('Unexpected response format from /complaint-priorities:', response.data);
+      return [];
+    },
+  });
+
+  return {
+    priorities: Array.isArray(data) ? data : [],
+    isLoading,
+    isError,
+    error
+  };
 };
 
 export default function TicketManagementPage() {
@@ -271,6 +290,10 @@ export default function TicketManagementPage() {
     },
   });
 
+  // Add hooks for statuses and priorities
+  const { complaintStatuses, isLoading: isLoadingStatuses } = useComplaintStatuses();
+  const { priorities, isLoading: isLoadingPriorities } = useComplaintPriorities();
+
   // Role-based access control
   if (!hasRole('it_officer') && !hasRole('hr_admin')) {
     return (
@@ -381,12 +404,21 @@ export default function TicketManagementPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {complaint.statusEntity && (
-                          <SelectItem value={complaint.statusId || ''}>
-                            {complaint.statusEntity.name}
-                          </SelectItem>
+                        {isLoadingStatuses ? (
+                          <div className="flex items-center justify-center p-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          </div>
+                        ) : complaintStatuses.length === 0 ? (
+                          <div className="p-2 text-sm text-muted-foreground">
+                            No statuses available
+                          </div>
+                        ) : (
+                          complaintStatuses.map((status) => (
+                            <SelectItem key={status.id} value={status.id}>
+                              {status.name}
+                            </SelectItem>
+                          ))
                         )}
-                        {/* Add other status options based on role */}
                       </SelectContent>
                     </Select>
 
@@ -402,12 +434,21 @@ export default function TicketManagementPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {complaint.priorityEntity && (
-                          <SelectItem value={complaint.priorityId || ''}>
-                            {complaint.priorityEntity.name}
-                          </SelectItem>
+                        {isLoadingPriorities ? (
+                          <div className="flex items-center justify-center p-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          </div>
+                        ) : priorities.length === 0 ? (
+                          <div className="p-2 text-sm text-muted-foreground">
+                            No priorities available
+                          </div>
+                        ) : (
+                          priorities.map((priority) => (
+                            <SelectItem key={priority.id} value={priority.id}>
+                              {priority.name}
+                            </SelectItem>
+                          ))
                         )}
-                        {/* Add other priority options */}
                       </SelectContent>
                     </Select>
                   </div>
