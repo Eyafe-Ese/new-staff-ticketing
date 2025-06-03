@@ -385,7 +385,7 @@ export default function TicketsPage() {
                           }`}
                         >
                           {ticket.statusEntity?.name || "Unknown"}
-                        </span>
+                      </span>
                       </TableCell>
                       <TableCell>
                         <span
@@ -417,7 +417,7 @@ export default function TicketsPage() {
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           {hasRole("it_officer") && (
-                            <>
+                        <>
                               {!ticket.assignedTo && (
                                 <Button
                                   variant="outline"
@@ -437,8 +437,8 @@ export default function TicketsPage() {
                                   ) : (
                                     "Assign to Me"
                                   )}
-                                </Button>
-                              )}
+                            </Button>
+                          )}
                               <Select
                                 defaultValue={ticket.statusId}
                                 onValueChange={(statusId) => {
@@ -448,10 +448,10 @@ export default function TicketsPage() {
                                   });
                                 }}
                               >
-                                <SelectTrigger className="w-28">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
+                            <SelectTrigger className="w-28">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
                                   {complaintStatuses
                                     .filter(status => 
                                       ["IN_PROGRESS", "ON_HOLD", "RESOLVED"].includes(status.code)
@@ -459,14 +459,14 @@ export default function TicketsPage() {
                                     .map(status => (
                                       <SelectItem key={status.id} value={status.id}>
                                         {status.name}
-                                      </SelectItem>
+                              </SelectItem>
                                     ))}
-                                </SelectContent>
-                              </Select>
-                            </>
-                          )}
+                            </SelectContent>
+                          </Select>
+                        </>
+                      )}
                           {hasRole("hr_admin") && (
-                            <>
+                        <>
                               <Select
                                 defaultValue={ticket.statusId}
                                 onValueChange={(statusId) => {
@@ -476,10 +476,10 @@ export default function TicketsPage() {
                                   });
                                 }}
                               >
-                                <SelectTrigger className="w-28">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
+                            <SelectTrigger className="w-28">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
                                   {complaintStatuses
                                     .filter(status => 
                                       ["NEW", "IN_PROGRESS", "ON_HOLD", "RESOLVED", "CLOSED"].includes(status.code)
@@ -487,10 +487,10 @@ export default function TicketsPage() {
                                     .map(status => (
                                       <SelectItem key={status.id} value={status.id}>
                                         {status.name}
-                                      </SelectItem>
+                              </SelectItem>
                                     ))}
-                                </SelectContent>
-                              </Select>
+                            </SelectContent>
+                          </Select>
                               <Dialog>
                                 <DialogTrigger asChild>
                                   <Button
@@ -502,8 +502,8 @@ export default function TicketsPage() {
                                       })
                                     }
                                   >
-                                    Reassign
-                                  </Button>
+                            Reassign
+                          </Button>
                                 </DialogTrigger>
                                 <DialogContent>
                                   <DialogHeader>
@@ -547,8 +547,8 @@ export default function TicketsPage() {
                                       })
                                     }
                                   >
-                                    Force Close
-                                  </Button>
+                            Force Close
+                          </Button>
                                 </DialogTrigger>
                                 <DialogContent>
                                   <DialogHeader>
@@ -602,8 +602,8 @@ export default function TicketsPage() {
                                   </DialogFooter>
                                 </DialogContent>
                               </Dialog>
-                            </>
-                          )}
+                        </>
+                      )}
                         </div>
                       </TableCell>
                     </TableRow>
