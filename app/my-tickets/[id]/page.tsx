@@ -32,6 +32,12 @@ import { useComplaintAttachments } from "@/hooks/useComplaintAttachments";
 import Image from "next/image";
 import { Attachment } from "@/hooks/useComplaints";
 import { format } from "date-fns";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Helper function to format dates consistently
 const formatDate = (date: string | Date) => {
@@ -190,6 +196,46 @@ const AttachmentModal = ({
       </div>
     </div>
   );
+};
+
+// Add status color mapping
+const getStatusColor = (statusCode: string) => {
+  switch (statusCode) {
+    case 'OPEN':
+      return 'bg-blue-100 text-blue-700 border-blue-200';
+    case 'IN_PROGRESS':
+      return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+    case 'RESOLVED':
+      return 'bg-green-100 text-green-700 border-green-200';
+    case 'CLOSED':
+      return 'bg-gray-100 text-gray-700 border-gray-200';
+    case 'PENDING':
+      return 'bg-purple-100 text-purple-700 border-purple-200';
+    case 'REJECTED':
+      return 'bg-red-100 text-red-700 border-red-200';
+    default:
+      return 'bg-gray-100 text-gray-700 border-gray-200';
+  }
+};
+
+// Add status description mapping
+const getStatusDescription = (statusCode: string) => {
+  switch (statusCode) {
+    case 'OPEN':
+      return 'Ticket is open and awaiting assignment';
+    case 'IN_PROGRESS':
+      return 'Ticket is currently being worked on';
+    case 'RESOLVED':
+      return 'Ticket has been resolved but not yet closed';
+    case 'CLOSED':
+      return 'Ticket has been closed and completed';
+    case 'PENDING':
+      return 'Ticket is pending additional information or action';
+    case 'REJECTED':
+      return 'Ticket has been rejected';
+    default:
+      return 'Unknown status';
+  }
 };
 
 export default function TicketDetailPage() {
@@ -545,7 +591,9 @@ export default function TicketDetailPage() {
               </div>
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary`}
+                  className={`px-2 py-1 rounded-full text-xs font-medium border ${
+                    getStatusColor(complaint.statusEntity?.code || complaint.status)
+                  }`}
                 >
                   {complaint.statusEntity?.name || complaint.status}
                 </span>
@@ -615,18 +663,41 @@ export default function TicketDetailPage() {
               <StyledCardHeader
                 title="Attachments"
                 action={
-                  !isTicketClosedOrResolved() && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => complaintFileInputRef.current?.click()}
-                      disabled={isUploading || complaintFiles.length > 0}
-                      className="h-8 w-8 sm:h-auto sm:w-auto sm:px-3"
-                    >
-                      <Plus className="h-4 w-4 sm:mr-1" />
-                      <span className="hidden sm:inline">Add</span>
-                    </Button>
-                  )
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          {!isTicketClosedOrResolved() ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => complaintFileInputRef.current?.click()}
+                              disabled={isUploading || complaintFiles.length > 0}
+                              className="h-8 w-8 sm:h-auto sm:w-auto sm:px-3"
+                            >
+                              <Plus className="h-4 w-4 sm:mr-1" />
+                              <span className="hidden sm:inline">Add</span>
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled
+                              className="h-8 w-8 sm:h-auto sm:w-auto sm:px-3 opacity-50 cursor-not-allowed"
+                            >
+                              <Plus className="h-4 w-4 sm:mr-1" />
+                              <span className="hidden sm:inline">Add</span>
+                            </Button>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {isTicketClosedOrResolved()
+                          ? `Cannot add attachments: Ticket is ${complaint.statusEntity?.name.toLowerCase()}`
+                          : "Add attachments to this ticket"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 }
               />
               <CardContent>
@@ -661,27 +732,50 @@ export default function TicketDetailPage() {
                             </span>
                           </button>
                         </div>
-                        {!isTicketClosedOrResolved() && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              handleDeleteComplaintAttachment(attachment.id)
-                            }
-                            disabled={isDeletingAttachment}
-                            className="ml-2 h-8 w-8 p-0"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        )}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div>
+                                {!isTicketClosedOrResolved() ? (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleDeleteComplaintAttachment(attachment.id)
+                                    }
+                                    disabled={isDeletingAttachment}
+                                    className="ml-2 h-8 w-8 p-0"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    disabled
+                                    className="ml-2 h-8 w-8 p-0 opacity-50 cursor-not-allowed"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {isTicketClosedOrResolved()
+                                ? `Cannot remove attachment: Ticket is ${complaint.statusEntity?.name.toLowerCase()}`
+                                : "Remove attachment"}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </li>
                     ))}
                   </ul>
                 ) : (
                   <div className="text-sm text-muted-foreground mb-4">
                     {isTicketClosedOrResolved() 
-                      ? "No attachments (Ticket is closed/resolved)"
+                      ? `No attachments (Ticket is ${complaint.statusEntity?.name.toLowerCase()})`
                       : "No attachments"}
                   </div>
                 )}
@@ -800,12 +894,14 @@ export default function TicketDetailPage() {
 
                 {/* Show message when ticket is closed/resolved */}
                 {isTicketClosedOrResolved() && (
-                  <div className="text-sm text-muted-foreground mt-4 p-3 bg-muted/50 rounded-md">
+                  <div className={`text-sm mt-4 p-3 rounded-md border ${
+                    getStatusColor(complaint.statusEntity?.code || complaint.status)
+                  }`}>
                     <p className="flex items-center gap-2">
                       <span>🔒</span>
                       <span>
                         This ticket is {complaint.statusEntity?.name.toLowerCase()}. 
-                        Attachments cannot be added or removed.
+                        {getStatusDescription(complaint.statusEntity?.code || complaint.status)}
                       </span>
                     </p>
                   </div>
@@ -823,7 +919,9 @@ export default function TicketDetailPage() {
                   <dt className="text-sm text-muted-foreground">Status</dt>
                   <dd>
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary`}
+                      className={`px-2 py-1 rounded-full text-xs font-medium border ${
+                        getStatusColor(complaint.statusEntity?.code || complaint.status)
+                      }`}
                     >
                       {complaint.statusEntity?.name || complaint.status}
                     </span>
