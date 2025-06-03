@@ -88,6 +88,16 @@ interface User {
   isActive: boolean;
 }
 
+// Add Priority interface
+interface ComplaintPriority {
+  id: string;
+  name: string;
+  code: string;
+  description: string;
+  level: number;
+  isActive: boolean;
+}
+
 // Status and Priority helpers
 const getStatusColor = (statusCode: StatusCode | undefined | null) => {
   if (!statusCode) return 'bg-gray-100 text-gray-700 border-gray-200';
@@ -151,18 +161,19 @@ const reassignTicket = async (ticketId: string, assignedToId: string) => {
   return response.data;
 };
 
-// Add a new hook for priorities
+// Update the priorities hook
 const useComplaintPriorities = () => {
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['complaintPriorities'],
-    queryFn: async () => {
-      const response = await api.get('/complaint-priorities');
+    queryKey: ['complaintPriorities', 'active'],
+    queryFn: async (): Promise<ComplaintPriority[]> => {
+      const response = await api.get('/complaint-priorities/active');
       if (Array.isArray(response.data)) {
-        return response.data;
+        // Sort priorities by level (higher level = higher priority)
+        return response.data.sort((a: ComplaintPriority, b: ComplaintPriority) => b.level - a.level);
       } else if (response.data && Array.isArray(response.data.data)) {
-        return response.data.data;
+        return response.data.data.sort((a: ComplaintPriority, b: ComplaintPriority) => b.level - a.level);
       }
-      console.warn('Unexpected response format from /complaint-priorities:', response.data);
+      console.warn('Unexpected response format from /complaint-priorities/active:', response.data);
       return [];
     },
   });
@@ -439,8 +450,17 @@ export default function TicketManagementPage() {
                           </div>
                         ) : (
                           priorities.map((priority) => (
-                            <SelectItem key={priority.id} value={priority.id}>
-                              {priority.name}
+                            <SelectItem 
+                              key={priority.id} 
+                              value={priority.id}
+                              className="flex flex-col items-start"
+                            >
+                              <div className="font-medium">{priority.name}</div>
+                              {priority.description && (
+                                <div className="text-xs text-muted-foreground mt-0.5">
+                                  {priority.description}
+                                </div>
+                              )}
                             </SelectItem>
                           ))
                         )}
