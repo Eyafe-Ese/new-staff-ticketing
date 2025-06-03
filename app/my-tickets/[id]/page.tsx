@@ -464,6 +464,13 @@ export default function TicketDetailPage() {
     }
   };
 
+  // Add helper function to check if ticket is closed or resolved
+  const isTicketClosedOrResolved = useCallback(() => {
+    if (!complaint) return false;
+    const status = complaint.statusEntity?.code || complaint.status;
+    return status === 'CLOSED' || status === 'RESOLVED';
+  }, [complaint]);
+
   // Loading state
   if (isLoading) {
     return (
@@ -608,16 +615,18 @@ export default function TicketDetailPage() {
               <StyledCardHeader
                 title="Attachments"
                 action={
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => complaintFileInputRef.current?.click()}
-                    disabled={isUploading || complaintFiles.length > 0}
-                    className="h-8 w-8 sm:h-auto sm:w-auto sm:px-3"
-                  >
-                    <Plus className="h-4 w-4 sm:mr-1" />
-                    <span className="hidden sm:inline">Add</span>
-                  </Button>
+                  !isTicketClosedOrResolved() && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => complaintFileInputRef.current?.click()}
+                      disabled={isUploading || complaintFiles.length > 0}
+                      className="h-8 w-8 sm:h-auto sm:w-auto sm:px-3"
+                    >
+                      <Plus className="h-4 w-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Add</span>
+                    </Button>
+                  )
                 }
               />
               <CardContent>
@@ -629,7 +638,7 @@ export default function TicketDetailPage() {
                   onChange={handleComplaintFileInput}
                   multiple
                   accept=".jpg,.jpeg,.png,.mp4,.pdf"
-                  disabled={isUploading}
+                  disabled={isUploading || isTicketClosedOrResolved()}
                 />
 
                 {/* Attachment List */}
@@ -652,29 +661,33 @@ export default function TicketDetailPage() {
                             </span>
                           </button>
                         </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            handleDeleteComplaintAttachment(attachment.id)
-                          }
-                          disabled={isDeletingAttachment}
-                          className="ml-2 h-8 w-8 p-0"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                        {!isTicketClosedOrResolved() && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              handleDeleteComplaintAttachment(attachment.id)
+                            }
+                            disabled={isDeletingAttachment}
+                            className="ml-2 h-8 w-8 p-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
                       </li>
                     ))}
                   </ul>
                 ) : (
                   <div className="text-sm text-muted-foreground mb-4">
-                    No attachments
+                    {isTicketClosedOrResolved() 
+                      ? "No attachments (Ticket is closed/resolved)"
+                      : "No attachments"}
                   </div>
                 )}
 
                 {/* Selected files to upload */}
-                {complaintFiles.length > 0 && (
+                {complaintFiles.length > 0 && !isTicketClosedOrResolved() && (
                   <div className="mt-4">
                     <div className="text-sm font-medium mb-2">
                       Files to upload:
@@ -758,7 +771,8 @@ export default function TicketDetailPage() {
 
                 {/* File Drop Area */}
                 {complaintFiles.length === 0 &&
-                  !complaint.attachments?.length && (
+                  !complaint.attachments?.length &&
+                  !isTicketClosedOrResolved() && (
                     <div
                       className={`border-2 border-dashed rounded-md p-4 text-center ${
                         isDragging
@@ -783,6 +797,19 @@ export default function TicketDetailPage() {
                       </div>
                     </div>
                   )}
+
+                {/* Show message when ticket is closed/resolved */}
+                {isTicketClosedOrResolved() && (
+                  <div className="text-sm text-muted-foreground mt-4 p-3 bg-muted/50 rounded-md">
+                    <p className="flex items-center gap-2">
+                      <span>🔒</span>
+                      <span>
+                        This ticket is {complaint.statusEntity?.name.toLowerCase()}. 
+                        Attachments cannot be added or removed.
+                      </span>
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
