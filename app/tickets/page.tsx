@@ -63,7 +63,7 @@ const statusOptions = [
 ];
 
 export default function TicketsPage() {
-  const { userRole } = useRoleCheck();
+  const { userRole, hasRole } = useRoleCheck();
   const [status, setStatus] = useState("All");
   const [category, setCategory] = useState("All");
   const [department, setDepartment] = useState("All");
@@ -78,16 +78,16 @@ export default function TicketsPage() {
 
   // Filter tickets based on role and filters (mock logic)
   let tickets = mockTickets;
-  if (userRole === "staff") {
+  if (hasRole("staff")) {
     tickets = tickets.filter((t) => t.reporter === "You");
-  } else if (userRole === "department_officer") {
+  } else if (hasRole("it_officer")) {
     tickets = tickets.filter((t) => t.department === "IT"); // Example: officer in IT
     if (assignedToMe) tickets = tickets.filter((t) => t.assignedToMe);
   }
   if (status !== "All") tickets = tickets.filter((t) => t.status === status);
   if (category !== "All")
     tickets = tickets.filter((t) => t.category === category);
-  if (userRole === "admin" && department !== "All")
+  if (hasRole("hr_admin") && department !== "All")
     tickets = tickets.filter((t) => t.department === department);
   if (anonymous) tickets = tickets.filter((t) => t.anonymous);
   if (search)
@@ -142,7 +142,7 @@ export default function TicketsPage() {
               </SelectContent>
             </Select>
           </div>
-          {userRole === "admin" && (
+          {hasRole("hr_admin") && (
             <div>
               <label className="block text-xs mb-1">Department</label>
               <Select value={department} onValueChange={setDepartment}>
@@ -174,7 +174,7 @@ export default function TicketsPage() {
               {anonymous ? "Yes" : "No"}
             </Button>
           </div>
-          {userRole === "department_officer" && (
+          {hasRole("it_officer") && (
             <div>
               <label className="block text-xs mb-1">Assigned To Me</label>
               <Button
@@ -268,13 +268,12 @@ export default function TicketsPage() {
                       >
                         View
                       </Link>
-                      {/* Add role-based actions here */}
-                      {userRole === "staff" && (
+                      {hasRole("staff") && (
                         <Button variant="ghost" size="icon" title="Add Comment">
                           💬
                         </Button>
                       )}
-                      {userRole === "department_officer" && (
+                      {hasRole("it_officer") && (
                         <>
                           {!ticket.assignedToMe && (
                             <Button variant="outline" size="sm">
@@ -295,7 +294,7 @@ export default function TicketsPage() {
                           </Select>
                         </>
                       )}
-                      {userRole === "admin" && (
+                      {hasRole("hr_admin") && (
                         <>
                           <Select defaultValue={ticket.status}>
                             <SelectTrigger className="w-28">
