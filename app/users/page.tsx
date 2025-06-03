@@ -426,7 +426,7 @@ export default function UsersPage() {
   };
 
   return (
-    <RoleProtectedRoute requiredRole="admin" fallbackPath="/">
+    <RoleProtectedRoute requiredRole="hr_admin" fallbackPath="/">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
