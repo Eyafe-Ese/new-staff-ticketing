@@ -177,6 +177,37 @@ const AttachmentModal = ({
   );
 };
 
+// Add status type and color mapping
+type StatusCode = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | 'PENDING' | 'REJECTED';
+
+const getStatusColor = (statusCode: StatusCode | undefined | null) => {
+  if (!statusCode) return 'bg-gray-100 text-gray-700 border-gray-200';
+  
+  switch (statusCode) {
+    case 'OPEN':
+      return 'bg-blue-100 text-blue-700 border-blue-200';
+    case 'IN_PROGRESS':
+      return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+    case 'RESOLVED':
+      return 'bg-green-100 text-green-700 border-green-200';
+    case 'CLOSED':
+      return 'bg-gray-100 text-gray-700 border-gray-200';
+    case 'PENDING':
+      return 'bg-purple-100 text-purple-700 border-purple-200';
+    case 'REJECTED':
+      return 'bg-red-100 text-red-700 border-red-200';
+    default:
+      return 'bg-gray-100 text-gray-700 border-gray-200';
+  }
+};
+
+// Add helper function to check if ticket is closed or resolved
+const isTicketClosedOrResolved = (complaint: any) => {
+  if (!complaint) return false;
+  const status = (complaint.statusEntity?.code || complaint.status) as StatusCode | undefined;
+  return status === 'CLOSED' || status === 'RESOLVED';
+};
+
 export default function TrackComplaintPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -454,7 +485,7 @@ export default function TrackComplaintPage() {
     <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 py-4 sm:py-8 px-4 sm:px-6 lg:px-0">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-primary">
-          Track Your Complaint
+          Track Your Anonymous Complaint
         </h1>
         <p className="text-sm sm:text-base text-muted-foreground">
           Enter your tracking token to see the status of your anonymous
@@ -525,7 +556,9 @@ export default function TrackComplaintPage() {
                     <h3 className="text-lg font-semibold">
                       {complaint.title || complaint.subject}
                     </h3>
-                    <div className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary font-medium">
+                    <div className={`px-2 py-1 text-xs rounded-full border font-medium ${
+                      getStatusColor(complaint.statusEntity?.code as StatusCode)
+                    }`}>
                       {complaint.statusEntity?.name || "Unknown"}
                     </div>
                   </div>
@@ -598,15 +631,22 @@ export default function TrackComplaintPage() {
                             `(${complaint.attachments.length})`}
                         </h4>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => complaintFileInputRef.current?.click()}
-                        disabled={isUploadingAttachments}
-                      >
-                        <Upload className="h-4 w-4 mr-2" />
-                        Add Files
-                      </Button>
+                      {!isTicketClosedOrResolved(complaint) ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => complaintFileInputRef.current?.click()}
+                          disabled={isUploadingAttachments}
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Add Files
+                        </Button>
+                      ) : (
+                        <div className="text-xs text-muted-foreground flex items-center gap-1">
+                          <span>🔒</span>
+                          <span>Attachments locked: Ticket is {complaint.statusEntity?.name.toLowerCase()}</span>
+                        </div>
+                      )}
                     </div>
 
                     <input
@@ -616,10 +656,11 @@ export default function TrackComplaintPage() {
                       className="hidden"
                       multiple
                       accept=".jpg,.jpeg,.png,.pdf,.mp4"
+                      disabled={isTicketClosedOrResolved(complaint)}
                     />
 
                     {/* File Upload Area */}
-                    {complaintFiles.length > 0 && (
+                    {complaintFiles.length > 0 && !isTicketClosedOrResolved(complaint) && (
                       <div className="space-y-4">
                         <div className="flex flex-wrap gap-2">
                           {complaintFiles.map((file, index) => (
@@ -688,40 +729,61 @@ export default function TrackComplaintPage() {
                     )}
 
                     {/* Existing Attachments */}
-                    {complaint.attachments &&
-                      complaint.attachments.length > 0 && (
-                        <div className="grid gap-2">
-                          {complaint.attachments.map((attachment, index) => (
+                    {complaint.attachments && complaint.attachments.length > 0 ? (
+                      <div className="grid gap-2">
+                        {complaint.attachments.map((attachment, index) => (
+                          <div
+                            key={attachment.id}
+                            className="flex items-center justify-between gap-2 text-sm text-primary hover:bg-muted/50 p-2 rounded-md border border-muted/60 bg-muted/30"
+                          >
                             <button
-                              key={attachment.id}
                               onClick={() => openAttachmentModal(index)}
-                              className="flex items-center gap-2 text-sm text-primary hover:bg-muted/50 p-2 rounded-md border border-muted/60 bg-muted/30 w-full text-left"
+                              className="flex items-center gap-2 flex-1 text-left"
                             >
                               {getFileIcon(attachment.filename)}
                               <span className="truncate">
                                 {attachment.filename}
                               </span>
                             </button>
-                          ))}
-                        </div>
-                      )}
+                            {!isTicketClosedOrResolved(complaint) && (
+                              <button
+                                onClick={() => handleRemoveComplaintFile(index)}
+                                className="p-1 hover:bg-muted rounded-full"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground">
+                        {isTicketClosedOrResolved(complaint)
+                          ? `No attachments (Ticket is ${complaint.statusEntity?.name.toLowerCase()})`
+                          : "No attachments"}
+                      </div>
+                    )}
                   </div>
 
                   {/* Status Messages */}
-                  {complaint.statusEntity?.code === "resolved" && (
-                    <div className="mt-6 flex items-center gap-2 p-3 rounded-md bg-green-50 text-green-700 border border-green-200">
+                  {complaint.statusEntity?.code === "RESOLVED" && (
+                    <div className={`mt-6 flex items-center gap-2 p-3 rounded-md border ${
+                      getStatusColor(complaint.statusEntity.code as StatusCode)
+                    }`}>
                       <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                       <span className="text-sm">
-                        This complaint has been resolved.
+                        This complaint has been resolved. No further attachments can be added or removed.
                       </span>
                     </div>
                   )}
 
-                  {complaint.statusEntity?.code === "closed" && (
-                    <div className="mt-6 flex items-center gap-2 p-3 rounded-md bg-gray-50 text-gray-700 border border-gray-200">
+                  {complaint.statusEntity?.code === "CLOSED" && (
+                    <div className={`mt-6 flex items-center gap-2 p-3 rounded-md border ${
+                      getStatusColor(complaint.statusEntity.code as StatusCode)
+                    }`}>
                       <XCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                       <span className="text-sm">
-                        This complaint has been closed.
+                        This complaint has been closed. No further attachments can be added or removed.
                       </span>
                     </div>
                   )}
