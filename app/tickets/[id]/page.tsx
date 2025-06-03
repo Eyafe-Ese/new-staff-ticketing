@@ -49,7 +49,6 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import api from "@/utils/api";
-import { RoleProtectedRoute } from "@/components/RoleProtectedRoute";
 import { useComplaintStatuses } from "@/hooks/useComplaintStatuses";
 
 // Helper function to format dates consistently
@@ -268,12 +267,18 @@ export default function TicketManagementPage() {
   });
 
   const priorityMutation = useMutation({
-    mutationFn: ({ ticketId, priorityId }: { ticketId: string; priorityId: string }) =>
-      updateTicketPriority(ticketId, priorityId),
+    mutationFn: async ({ ticketId, priorityId }: { ticketId: string; priorityId: string }) => {
+      const response = await api.patch(`/complaints/${ticketId}`, { priorityId });
+      return response.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['complaint', ticketId] });
-      toast.success('Ticket priority updated');
+      toast.success('Ticket priority updated successfully');
     },
+    onError: (error) => {
+      console.error('Failed to update priority:', error);
+      toast.error('Failed to update ticket priority');
+    }
   });
 
   const reassignMutation = useMutation({
@@ -435,6 +440,7 @@ export default function TicketManagementPage() {
                           priorityMutation.mutate({ ticketId: complaint.id, priorityId });
                         }
                       }}
+                      disabled={!hasRole('it_officer') && !hasRole('hr_admin') || priorityMutation.isPending}
                     >
                       <SelectTrigger className="w-[140px]">
                         <SelectValue />
@@ -454,6 +460,7 @@ export default function TicketManagementPage() {
                               key={priority.id} 
                               value={priority.id}
                               className="flex flex-col items-start"
+                              disabled={priority.id === complaint.priorityId}
                             >
                               <div className="font-medium">{priority.name}</div>
                               {priority.description && (
