@@ -24,10 +24,6 @@ import {
   ResponsiveContainer,
   BarChart as RBarChart,
   Bar,
-  PieChart as RPieChart,
-  Pie,
-  Cell,
-  Legend,
 } from "recharts";
 import {
   Search,
@@ -35,8 +31,6 @@ import {
   PlusCircle,
   ArrowRight,
 } from "lucide-react";
-
-const COLORS = ["#E14206", "#FF8042", "#0088FE", "#00C49F"];
 
 // Define proper types for chart data
 interface LineChartItem {
@@ -48,43 +42,6 @@ interface BarChartItem {
   [key: string]: string | number;
 }
 
-interface PieChartItem {
-  name: string;
-  value: number;
-}
-
-// Add these interfaces before the DashboardPage component
-interface Ticket {
-  id: string;
-  title: string;
-  status: string;
-  priority: string;
-  category: string;
-  createdAt: string;
-  updatedAt: string;
-  isAnonymous?: boolean;
-  department?: string;
-}
-
-interface Activity {
-  type: string;
-  user: string;
-  subject: string;
-  time: string;
-  color: string;
-  icon: string;
-  comment?: string;
-}
-
-interface StatsData {
-  totalITComplaints: number;
-  complaintsByStatus: Record<string, number>;
-  complaintsByPriority: Record<string, number>;
-  complaintsByCategory: Record<string, number>;
-  assignedToMe: number;
-}
-
-// Add these type definitions at the top with other interfaces
 interface ActivityData {
   type: string;
   user: string;
@@ -94,28 +51,6 @@ interface ActivityData {
   icon: string;
   comment?: string;
   status?: string;
-}
-
-interface TicketTimeData {
-  date: string;
-  tickets: number;
-}
-
-interface TicketCategoryData {
-  category: string;
-  count: number;
-}
-
-interface DepartmentData {
-  department: string;
-  count: number;
-}
-
-interface AdminStats {
-  open: number;
-  resolved: number;
-  anonymous: number;
-  users: number;
 }
 
 // Add back the chart components and loading states
@@ -165,35 +100,6 @@ function BarChart({
           <Tooltip />
           <Bar dataKey={yKey} fill="#E14206" />
         </RBarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-function PieChart({ data }: { data: PieChartItem[] }) {
-  return (
-    <div className="h-40 sm:h-48">
-      <ResponsiveContainer width="100%" height="100%">
-        <RPieChart>
-          <Pie
-            data={data}
-            dataKey="value"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            outerRadius={50}
-            label={{ fontSize: 10 }}
-          >
-            {data.map((entry, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={COLORS[index % COLORS.length]}
-              />
-            ))}
-          </Pie>
-          <Tooltip />
-          <Legend />
-        </RPieChart>
       </ResponsiveContainer>
     </div>
   );

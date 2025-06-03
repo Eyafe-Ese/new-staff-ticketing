@@ -150,11 +150,6 @@ const updateTicketStatus = async (ticketId: string, statusId: string) => {
   return response.data;
 };
 
-const updateTicketPriority = async (ticketId: string, priorityId: string) => {
-  const response = await api.patch(`/complaints/${ticketId}`, { priorityId });
-  return response.data;
-};
-
 const reassignTicket = async (ticketId: string, assignedToId: string) => {
   const response = await api.patch(`/complaints/${ticketId}`, { assignedToId });
   return response.data;
@@ -188,18 +183,15 @@ const useComplaintPriorities = () => {
 export default function TicketManagementPage() {
   // State
   const [comment, setComment] = useState("");
-  const [isDragging, setIsDragging] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
   const [complaintFiles, setComplaintFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [currentAttachmentIndex, setCurrentAttachmentIndex] = useState(0);
+  const [isRefreshing, ] = useState(false);
+  const [, setModalOpen] = useState(false);
+  const [, setCurrentAttachmentIndex] = useState(0);
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [isReassigning, setIsReassigning] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserId, ] = useState<string | null>(null);
 
   // Refs
   const complaintFileInputRef = useRef<HTMLInputElement>(null);
@@ -207,7 +199,6 @@ export default function TicketManagementPage() {
   // Router and params
   const params = useParams();
   const ticketId = params.id as string;
-  const router = useRouter();
 
   // Role check
   const { hasRole, userRole } = useRoleCheck();
@@ -291,16 +282,6 @@ export default function TicketManagementPage() {
     },
   });
 
-  // Add a query to get the current user's info
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: async () => {
-      const response = await api.get('/users/me');
-      setCurrentUserId(response.data.id);
-      return response.data;
-    },
-  });
-
   // Add hooks for statuses and priorities
   const { complaintStatuses, isLoading: isLoadingStatuses } = useComplaintStatuses();
   const { priorities, isLoading: isLoadingPriorities } = useComplaintPriorities();
@@ -341,7 +322,7 @@ export default function TicketManagementPage() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Failed to load ticket details. The ticket may not exist or you don't have permission to view it.
+            Failed to load ticket details. The ticket may not exist or you don&apos;t have permission to view it.
           </AlertDescription>
         </Alert>
         <Button asChild className="mt-4">
@@ -362,7 +343,7 @@ export default function TicketManagementPage() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            You don't have permission to manage this ticket. You can only manage tickets from your category.
+            You don&apos;t have permission to manage this ticket. You can only manage tickets from your category.
           </AlertDescription>
         </Alert>
         <Button asChild className="mt-4">

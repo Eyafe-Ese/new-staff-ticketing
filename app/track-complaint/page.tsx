@@ -220,7 +220,6 @@ export default function TrackComplaintPage() {
 
   // New state for comment form
   const [comment, setComment] = useState("");
-  const [, setIsDragging] = useState(false);
   const [, setUploadError] = useState<string | null>(null);
   const [commentFiles, setCommentFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -313,45 +312,6 @@ export default function TrackComplaintPage() {
     },
     [validateFile]
   );
-
-  // Update existing handleFilesSelect calls
-  const handleCommentFilesSelect = (files: File[]) =>
-    handleFilesSelect(files, setCommentFiles);
-  const handleComplaintFilesSelect = (files: File[]) =>
-    handleFilesSelect(files, setComplaintFiles);
-
-  // Drag and drop handlers
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-
-      if (e.dataTransfer.files) {
-        handleFilesSelect(Array.from(e.dataTransfer.files), setCommentFiles);
-      }
-    },
-    [handleFilesSelect]
-  );
-
-  const handleCommentFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      handleFilesSelect(Array.from(e.target.files), setCommentFiles);
-    }
-  };
-
-  const handleRemoveFile = (index: number) => {
-    setCommentFiles((prev) => prev.filter((_, i) => i !== index));
-  };
 
   const clearCommentFiles = () => {
     setCommentFiles([]);

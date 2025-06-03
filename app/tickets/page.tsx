@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, MouseEvent } from "react";
-import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoleCheck } from "@/hooks/useRoleCheck";
 import { Button } from "@/components/ui/button";
@@ -44,7 +43,6 @@ import {
   assignTicketToMe,
   reassignTicket,
   forceCloseTicket,
-  addTicketComment,
   type Ticket,
   type TicketFilters,
 } from "@/utils/ticketApi";
@@ -59,7 +57,6 @@ const priorityOptions = [
 
 export default function TicketsPage() {
   const { hasRole } = useRoleCheck();
-  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("all");
@@ -69,8 +66,7 @@ export default function TicketsPage() {
   const [anonymous, setAnonymous] = useState(false);
   const [search, setSearch] = useState("");
   const [assignedToMe, setAssignedToMe] = useState(false);
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [comment, setComment] = useState("");
+  const [, setSelectedTicket] = useState<Ticket | null>(null);
   const [closeReason, setCloseReason] = useState("");
   const [assigningTickets, setAssigningTickets] = useState<Record<string, boolean>>({});
 
@@ -147,16 +143,6 @@ export default function TicketsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
       setCloseReason("");
-      setSelectedTicket(null);
-    },
-  });
-
-  const commentMutation = useMutation({
-    mutationFn: ({ ticketId, comment }: { ticketId: string; comment: string }) =>
-      addTicketComment(ticketId, comment),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tickets"] });
-      setComment("");
       setSelectedTicket(null);
     },
   });

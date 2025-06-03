@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
-import { useAnonymousComplaintComments, useAnonymousComplaintCommentsList, type Comment } from '@/hooks/useAnonymousComplaintComments';
+import { useAnonymousComplaintComments, useAnonymousComplaintCommentsList} from '@/hooks/useAnonymousComplaintComments';
 
 interface AnonymousComplaintPageProps {
   params: {
