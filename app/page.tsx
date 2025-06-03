@@ -134,11 +134,10 @@ function ErrorState() {
 export default function DashboardPage() {
   const { userRole } = useRoleCheck();
 
-  // Only call hooks based on role
-  const staffDashboard = userRole === "staff" ? useStaffDashboard() : null;
-  const adminDashboard = userRole === "hr_admin" ? useAdminDashboard() : null;
-  const itOfficerDashboard =
-    userRole === "it_officer" ? useITOfficerDashboard() : null;
+  // Call all hooks unconditionally
+  const staffDashboard = useStaffDashboard();
+  const adminDashboard = useAdminDashboard();
+  const itOfficerDashboard = useITOfficerDashboard();
 
   // Add anonymous complaint tracking card
   const AnonymousTrackingCard = () => (
@@ -170,7 +169,7 @@ export default function DashboardPage() {
   );
 
   // STAFF VIEW
-  if (userRole === "staff" && staffDashboard) {
+  if (userRole === "staff") {
     const {
       stats,
       ticketsOverTime,
@@ -365,7 +364,7 @@ export default function DashboardPage() {
   }
 
   // IT OFFICER VIEW
-  if (userRole === "it_officer" && itOfficerDashboard) {
+  if (userRole === "it_officer") {
     const {
       stats,
       assignedTickets,
@@ -685,7 +684,7 @@ export default function DashboardPage() {
   }
 
   // HR ADMIN VIEW
-  if (userRole === "hr_admin" && adminDashboard) {
+  if (userRole === "hr_admin") {
     const {
       stats,
       ticketsOverTime,
