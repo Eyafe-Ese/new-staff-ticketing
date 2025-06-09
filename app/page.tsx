@@ -472,7 +472,7 @@ export default function DashboardPage() {
                       >
                         <div className="space-y-1">
                           <Link
-                            href={`/it-tickets/${ticket.id}`}
+                            href={`/tickets/${ticket.id}`}
                             className="font-medium hover:underline"
                           >
                             {ticket.title}
@@ -488,7 +488,7 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <Button variant="ghost" size="icon" asChild>
-                          <Link href={`/it-tickets/${ticket.id}`}>
+                          <Link href={`/tickets/${ticket.id}`}>
                             <ArrowRight className="h-4 w-4" />
                           </Link>
                         </Button>
@@ -501,7 +501,7 @@ export default function DashboardPage() {
                     )}
                     {assignedTickets.length > 3 && (
                       <Button variant="ghost" className="w-full" asChild>
-                        <Link href="/it-tickets?assigned=me">
+                        <Link href="/tickets?assigned=me">
                           View all assigned tickets
                         </Link>
                       </Button>
@@ -529,7 +529,7 @@ export default function DashboardPage() {
                       >
                         <div className="space-y-1">
                           <Link
-                            href={`/it-tickets/${ticket.id}`}
+                            href={`/tickets/${ticket.id}`}
                             className="font-medium hover:underline"
                           >
                             {ticket.title}
@@ -545,7 +545,7 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <Button variant="ghost" size="icon" asChild>
-                          <Link href={`/it-tickets/${ticket.id}`}>
+                          <Link href={`/tickets/${ticket.id}`}>
                             <ArrowRight className="h-4 w-4" />
                           </Link>
                         </Button>
@@ -558,7 +558,7 @@ export default function DashboardPage() {
                     )}
                     {unassignedTickets.length > 3 && (
                       <Button variant="ghost" className="w-full" asChild>
-                        <Link href="/it-tickets?status=new">
+                        <Link href="/tickets?status=new">
                           View all unassigned tickets
                         </Link>
                       </Button>
