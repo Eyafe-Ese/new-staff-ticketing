@@ -10,7 +10,6 @@ import {
   Package,
   Tag,
   Users,
-  Settings,
   PanelLeft,
   PanelRight,
   BarChart,
@@ -69,12 +68,6 @@ const navItems = [
     title: 'Users',
     href: '/users',
     icon: Users,
-    minRole: 'hr_admin' as UserRole,
-  },
-  {
-    title: 'Settings',
-    href: '/settings',
-    icon: Settings,
     minRole: 'hr_admin' as UserRole,
   },
 ];

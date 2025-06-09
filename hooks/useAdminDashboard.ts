@@ -1,21 +1,36 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '@/utils/api';
 
+export interface Ticket {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  category: string;
+  createdAt: string;
+  updatedAt: string;
+  department?: string;
+  isAnonymous?: boolean;
+}
+
 interface AdminStats {
-  open: number;
-  resolved: number;
-  anonymous: number;
-  users: number;
-}
-
-interface TicketTimeData {
-  date: string;
-  tickets: number;
-}
-
-interface DepartmentData {
-  department: string;
-  count: number;
+  totalHRComplaints: number;
+  assignedComplaints: number;
+  reportedComplaints: number;
+  unassignedComplaints: number;
+  complaintsByStatus: {
+    [key: string]: number;
+  };
+  complaintsByPriority: {
+    [key: string]: number;
+  };
+  complaintsByCategory: {
+    [key: string]: number;
+  };
+  assignedTickets: Ticket[];
+  reportedTickets: Ticket[];
+  unassignedTickets: Ticket[];
+  recentActivity: ActivityData[];
 }
 
 interface ActivityData {
@@ -28,22 +43,15 @@ interface ActivityData {
   status?: string;
 }
 
-interface AdminDashboardData {
-  stats: AdminStats;
-  ticketsOverTime: TicketTimeData[];
-  ticketsByDepartment: DepartmentData[];
-  latestActivity: ActivityData[];
-}
-
 interface ApiResponse {
-  data: AdminDashboardData;
+  data: AdminStats;
   timestamp: string;
 }
 
 export function useAdminDashboard() {
-  const fetchDashboardData = async (): Promise<AdminDashboardData> => {
-    const response = await api.get<ApiResponse>('/api/dashboard/admin');
-    return response.data.data; // Access the nested data property
+  const fetchDashboardData = async (): Promise<AdminStats> => {
+    const response = await api.get<ApiResponse>('/dashboard/hr-admin');
+    return response.data.data;
   };
 
   const { data, isLoading, isError, error } = useQuery({
@@ -52,10 +60,7 @@ export function useAdminDashboard() {
   });
 
   return {
-    stats: data?.stats,
-    ticketsOverTime: data?.ticketsOverTime || [],
-    ticketsByDepartment: data?.ticketsByDepartment || [],
-    latestActivity: data?.latestActivity || [],
+    stats: data,
     isLoading,
     isError,
     error
