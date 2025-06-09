@@ -135,10 +135,10 @@ function ErrorState() {
 export default function DashboardPage() {
   const { userRole } = useRoleCheck();
 
-  // Only call the relevant dashboard hook based on role
-  const staffDashboard = userRole === "staff" ? useStaffDashboard() : null;
-  const adminDashboard = userRole === "hr_admin" ? useAdminDashboard() : null;
-  const itOfficerDashboard = userRole === "it_officer" ? useITOfficerDashboard() : null;
+  // Call all hooks unconditionally
+  const staffDashboard = useStaffDashboard();
+  const adminDashboard = useAdminDashboard();
+  const itOfficerDashboard = useITOfficerDashboard();
 
   // Add anonymous complaint tracking card
   const AnonymousTrackingCard = () => (
@@ -366,328 +366,6 @@ export default function DashboardPage() {
     );
   }
 
-  // IT OFFICER VIEW
-  if (userRole === "it_officer") {
-    if (!itOfficerDashboard) return null;
-    
-    const {
-      stats,
-      assignedTickets,
-      myReportedTickets,
-      unassignedTickets,
-      recentActivity,
-      isLoading,
-      isError,
-    } = itOfficerDashboard;
-
-    if (isLoading) return <LoadingState />;
-    if (isError) return <ErrorState />;
-
-    return (
-      <div className="space-y-4 sm:space-y-6 px-4 sm:px-6 lg:px-0 py-4 sm:py-0">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Welcome to your IT officer dashboard.
-          </p>
-          <Button asChild className="bg-primary text-white sm:w-auto w-full">
-            <Link href="/tickets/new">
-              <PlusCircle className="h-4 w-4 mr-2" />
-              New Complaint
-            </Link>
-          </Button>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-2 sm:pb-4">
-              <CardTitle className="text-base sm:text-lg">
-                Total IT Complaints
-              </CardTitle>
-              <CardDescription>All complaints</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl sm:text-2xl font-bold text-primary">
-                {stats?.totalITComplaints || 0}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2 sm:pb-4">
-              <CardTitle className="text-base sm:text-lg">
-                Assigned to Me
-              </CardTitle>
-              <CardDescription>My tickets</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl sm:text-2xl font-bold text-primary">
-                {stats?.assignedToMe || 0}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2 sm:pb-4">
-              <CardTitle className="text-base sm:text-lg">Unassigned</CardTitle>
-              <CardDescription>Pending assignment</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl sm:text-2xl font-bold text-primary">
-                {unassignedTickets.length}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2 sm:pb-4">
-              <CardTitle className="text-base sm:text-lg">
-                My Reported
-              </CardTitle>
-              <CardDescription>Created by me</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl sm:text-2xl font-bold text-primary">
-                {myReportedTickets.length}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-3">
-          {/* Tickets Grid - full width on mobile, 2/3 on desktop */}
-          <div className="lg:col-span-2 space-y-3 sm:space-y-4">
-            <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2">
-              {/* Assigned Tickets */}
-              <Card>
-                <CardHeader className="pb-2 sm:pb-4">
-                  <CardTitle className="text-base sm:text-lg">
-                    Assigned to Me
-                  </CardTitle>
-                  <CardDescription>Recently assigned tickets</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {assignedTickets.slice(0, 3).map((ticket) => (
-                      <div
-                        key={ticket.id}
-                        className="flex items-start justify-between p-3 rounded-lg border"
-                      >
-                        <div className="space-y-1">
-                          <Link
-                            href={`/tickets/${ticket.id}`}
-                            className="font-medium hover:underline"
-                          >
-                            {ticket.title}
-                          </Link>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                              {ticket.status}
-                            </span>
-                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                              {ticket.priority}
-                            </span>
-                            <span>{ticket.category}</span>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="icon" asChild>
-                          <Link href={`/tickets/${ticket.id}`}>
-                            <ArrowRight className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                      </div>
-                    ))}
-                    {assignedTickets.length === 0 && (
-                      <div className="text-center py-4 text-muted-foreground">
-                        No tickets assigned to you
-                      </div>
-                    )}
-                    {assignedTickets.length > 3 && (
-                      <Button variant="ghost" className="w-full" asChild>
-                        <Link href="/tickets?assigned=me">
-                          View all assigned tickets
-                        </Link>
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Unassigned Tickets */}
-              <Card>
-                <CardHeader className="pb-2 sm:pb-4">
-                  <CardTitle className="text-base sm:text-lg">
-                    Unassigned Tickets
-                  </CardTitle>
-                  <CardDescription>
-                    New tickets requiring assignment
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {unassignedTickets.slice(0, 3).map((ticket) => (
-                      <div
-                        key={ticket.id}
-                        className="flex items-start justify-between p-3 rounded-lg border"
-                      >
-                        <div className="space-y-1">
-                          <Link
-                            href={`/tickets/${ticket.id}`}
-                            className="font-medium hover:underline"
-                          >
-                            {ticket.title}
-                          </Link>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                              {ticket.status}
-                            </span>
-                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                              {ticket.priority}
-                            </span>
-                            <span>{ticket.category}</span>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="icon" asChild>
-                          <Link href={`/tickets/${ticket.id}`}>
-                            <ArrowRight className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                      </div>
-                    ))}
-                    {unassignedTickets.length === 0 && (
-                      <div className="text-center py-4 text-muted-foreground">
-                        No unassigned tickets
-                      </div>
-                    )}
-                    {unassignedTickets.length > 3 && (
-                      <Button variant="ghost" className="w-full" asChild>
-                        <Link href="/tickets?status=new">
-                          View all unassigned tickets
-                        </Link>
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Status Breakdown - only visible on mobile */}
-            <Card className="lg:hidden">
-              <CardHeader className="pb-2 sm:pb-4">
-                <CardTitle className="text-base sm:text-lg">
-                  Status Breakdown
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {Object.entries(stats?.complaintsByStatus || {}).map(
-                    ([status, count]) => (
-                      <div key={status} className="text-center">
-                        <div className="text-xl sm:text-2xl font-bold text-primary">
-                          {count}
-                        </div>
-                        <div className="text-xs sm:text-sm text-muted-foreground capitalize">
-                          {status.replace("_", " ")}
-                        </div>
-                      </div>
-                    )
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-3 sm:space-y-4">
-            {/* Status Breakdown - hidden on mobile, shown on desktop */}
-            <Card className="hidden lg:block">
-              <CardHeader className="pb-2 sm:pb-4">
-                <CardTitle className="text-base sm:text-lg">
-                  Status Breakdown
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {Object.entries(stats?.complaintsByStatus || {}).map(
-                    ([status, count]) => (
-                      <div
-                        key={status}
-                        className="flex items-center justify-between"
-                      >
-                        <span className="text-sm capitalize">
-                          {status.replace("_", " ")}
-                        </span>
-                        <span className="text-lg font-bold text-primary">
-                          {count}
-                        </span>
-                      </div>
-                    )
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Activity */}
-            <Card>
-              <CardHeader className="pb-2 sm:pb-4">
-                <CardTitle className="text-base sm:text-lg">
-                  Recent Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="divide-y divide-gray-100">
-                  {recentActivity
-                    .slice(0, 5)
-                    .map((activity: ActivityData, idx: number) => (
-                      <li key={idx} className="flex items-center gap-2 py-2">
-                        <span
-                          className="text-lg sm:text-xl"
-                          style={{ color: activity.color }}
-                        >
-                          {activity.icon}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs sm:text-sm truncate">
-                            <span className="font-medium text-primary">
-                              {activity.user}
-                            </span>{" "}
-                            {activity.type === "status_changed" &&
-                              "changed status of"}
-                            {activity.type === "comment_added" &&
-                              "commented on"}
-                            {activity.type === "ticket_assigned" && "assigned"}
-                            {activity.type === "ticket_created" &&
-                              "created"}{" "}
-                            <span className="font-medium">
-                              {activity.subject}
-                            </span>
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {activity.time}
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                </ul>
-                {recentActivity.length === 0 && (
-                  <div className="text-center py-4 text-muted-foreground">
-                    No recent activity
-                  </div>
-                )}
-                {recentActivity.length > 5 && (
-                  <Button
-                    variant="ghost"
-                    className="w-full mt-2 text-xs h-8"
-                    asChild
-                  >
-                    <Link href="/notifications">View All Activity</Link>
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // HR ADMIN VIEW
   if (userRole === "hr_admin") {
     if (!adminDashboard) return null;
@@ -788,7 +466,7 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {Object.entries(stats?.complaintsByStatus || {}).map(([status, count]) => (
                     <div key={status} className="text-center p-3 rounded-lg bg-muted">
-                      <div className="text-2xl font-bold text-primary">{count as number}</div>
+                      <div className="text-2xl font-bold text-primary">{count}</div>
                       <div className="text-sm text-muted-foreground capitalize">
                         {status.toLowerCase().replace('_', ' ')}
                       </div>
@@ -807,7 +485,7 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {Object.entries(stats?.complaintsByPriority || {}).map(([priority, count]) => (
                     <div key={priority} className="text-center p-3 rounded-lg bg-muted">
-                      <div className="text-2xl font-bold text-primary">{count as number}</div>
+                      <div className="text-2xl font-bold text-primary">{count}</div>
                       <div className="text-sm text-muted-foreground capitalize">
                         {priority.toLowerCase()}
                       </div>
@@ -831,7 +509,10 @@ export default function DashboardPage() {
                   {stats?.assignedTickets?.slice(0, 3).map((ticket: Ticket) => (
                     <div key={ticket.id} className="flex items-start justify-between p-3 rounded-lg border">
                       <div className="space-y-1">
-                        <Link href={`/tickets/${ticket.id}`} className="font-medium hover:underline">
+                        <Link
+                          href={`/tickets/${ticket.id}`}
+                          className="font-medium hover:underline"
+                        >
                           {ticket.title}
                         </Link>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -870,7 +551,10 @@ export default function DashboardPage() {
                   {stats?.unassignedTickets?.slice(0, 3).map((ticket: Ticket) => (
                     <div key={ticket.id} className="flex items-start justify-between p-3 rounded-lg border">
                       <div className="space-y-1">
-                        <Link href={`/tickets/${ticket.id}`} className="font-medium hover:underline">
+                        <Link
+                          href={`/tickets/${ticket.id}`}
+                          className="font-medium hover:underline"
+                        >
                           {ticket.title}
                         </Link>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -904,43 +588,301 @@ export default function DashboardPage() {
     );
   }
 
-  // If no role matches (logged out), show login page
-  return (
-    <div className="flex h-screen">
-      <div className="flex-1 bg-primary/10">
-        {/* Left side with graphics or info */}
-      </div>
-      <div className="flex-1 p-8 flex flex-col justify-center">
-        <div className="max-w-md mx-auto space-y-6">
-          <div className="space-y-2 text-center">
-            <h1 className="text-3xl font-bold">Staff Complaint Portal</h1>
+  // IT OFFICER VIEW
+  if (userRole === "it_officer") {
+    if (!itOfficerDashboard) return null;
+    
+    const {
+      stats,
+      assignedTickets,
+      myReportedTickets,
+      unassignedTickets,
+      recentActivity,
+      isLoading,
+      isError,
+    } = itOfficerDashboard;
+
+    if (isLoading) return <LoadingState />;
+    if (isError) return <ErrorState />;
+
+    return (
+      <div className="space-y-6 px-4 sm:px-6 lg:px-0 py-4 sm:py-0">
+        {/* Quick Tools Section */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold mb-2">IT Support Dashboard</h1>
             <p className="text-muted-foreground">
-              Login to submit or manage complaints
+              Overview of all IT support tickets and technical issues.
             </p>
           </div>
-
-          <div className="grid gap-4">
-            <Button asChild size="lg">
-              <Link href="/login">Login</Link>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link href="/reports">
+                <Search className="h-4 w-4 mr-2" />
+                IT Reports
+              </Link>
             </Button>
+          </div>
+        </div>
 
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t"></span>
+        {/* Stats Cards */}
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Total IT Complaints</CardTitle>
+              <CardDescription>All complaints</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">
+                {stats?.totalITComplaints || 0}
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-muted-foreground">Or</span>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Unassigned Tickets</CardTitle>
+              <CardDescription>Pending assignment</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">
+                {unassignedTickets.length}
               </div>
-            </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">My Reported Tickets</CardTitle>
+              <CardDescription>Created by you</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">
+                {myReportedTickets.length}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Assigned to Me</CardTitle>
+              <CardDescription>Currently assigned</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">
+                {stats?.assignedToMe || 0}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-            <Button asChild variant="outline" size="lg">
-              <Link href="/tickets/new">Submit New Complaint</Link>
-            </Button>
+        {/* Main Content Grid */}
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+          {/* Left Column - Charts */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Status Breakdown */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Complaints by Status</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {Object.entries(stats?.complaintsByStatus || {}).map(([status, count]) => (
+                    <div key={status} className="text-center p-3 rounded-lg bg-muted">
+                      <div className="text-2xl font-bold text-primary">{count}</div>
+                      <div className="text-sm text-muted-foreground capitalize">
+                        {status.toLowerCase().replace('_', ' ')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
-            <AnonymousTrackingCard />
+            {/* Category Breakdown */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Complaints by Category</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {Object.entries(stats?.complaintsByCategory || {}).map(([category, count]) => (
+                    <div key={category} className="text-center p-3 rounded-lg bg-muted">
+                      <div className="text-2xl font-bold text-primary">{count}</div>
+                      <div className="text-sm text-muted-foreground capitalize">
+                        {category.toLowerCase()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column - Tickets */}
+          <div className="space-y-4">
+            {/* Assigned Tickets */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Assigned Tickets</CardTitle>
+                <CardDescription>Recently assigned to you</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {assignedTickets.slice(0, 3).map((ticket) => (
+                    <div
+                      key={ticket.id}
+                      className="flex items-start justify-between p-3 rounded-lg border"
+                    >
+                      <div className="space-y-1">
+                        <Link
+                          href={`/tickets/${ticket.id}`}
+                          className="font-medium hover:underline"
+                        >
+                          {ticket.title}
+                        </Link>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                            {ticket.status}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                            {ticket.priority}
+                          </span>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon" asChild>
+                        <Link href={`/tickets/${ticket.id}`}>
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </div>
+                  ))}
+                  {assignedTickets.length === 0 && (
+                    <div className="text-center py-4 text-muted-foreground">
+                      No tickets assigned to you
+                    </div>
+                  )}
+                  {assignedTickets.length > 3 && (
+                    <Button variant="ghost" className="w-full" asChild>
+                      <Link href="/tickets?assigned=me">
+                        View all assigned tickets
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Unassigned Tickets */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Unassigned Tickets</CardTitle>
+                <CardDescription>Requiring assignment</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {unassignedTickets.slice(0, 3).map((ticket) => (
+                    <div
+                      key={ticket.id}
+                      className="flex items-start justify-between p-3 rounded-lg border"
+                    >
+                      <div className="space-y-1">
+                        <Link
+                          href={`/tickets/${ticket.id}`}
+                          className="font-medium hover:underline"
+                        >
+                          {ticket.title}
+                        </Link>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                            {ticket.status}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                            {ticket.priority}
+                          </span>
+                          <span className="text-xs">{ticket.category}</span>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon" asChild>
+                        <Link href={`/tickets/${ticket.id}`}>
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </div>
+                  ))}
+                  {unassignedTickets.length === 0 && (
+                    <div className="text-center py-4 text-muted-foreground">
+                      No unassigned tickets
+                    </div>
+                  )}
+                  {unassignedTickets.length > 3 && (
+                    <Button variant="ghost" className="w-full" asChild>
+                      <Link href="/tickets?status=new">
+                        View all unassigned tickets
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Activity */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>Latest updates on tickets</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="divide-y divide-gray-100">
+                  {recentActivity
+                    .slice(0, 5)
+                    .map((activity: ActivityData, idx: number) => (
+                      <li key={idx} className="py-3">
+                        <div className="flex items-start gap-3">
+                          <div
+                            className={`p-2 rounded-full ${activity.color} bg-opacity-10`}
+                          >
+                            <span className={activity.icon} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900">
+                              {activity.user}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {activity.subject}
+                            </p>
+                            {activity.comment && (
+                              <p className="text-sm text-gray-500 mt-1">
+                                {activity.comment}
+                              </p>
+                            )}
+                            <p className="text-xs text-gray-400 mt-1">
+                              {activity.time}
+                            </p>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                </ul>
+                {recentActivity.length === 0 && (
+                  <div className="text-center py-4 text-muted-foreground">
+                    No recent activity
+                  </div>
+                )}
+                {recentActivity.length > 5 && (
+                  <Button
+                    variant="ghost"
+                    className="w-full"
+                    asChild
+                  >
+                    <Link href="/activity">View all activity</Link>
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // Default case - should not happen due to role check
+  return <ErrorState />;
 }
