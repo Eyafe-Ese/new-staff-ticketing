@@ -476,7 +476,7 @@ export default function TicketManagementPage() {
                     onClick={() => setIsReassigning(true)}
                   >
                     <UserPlus className="h-4 w-4 mr-2" />
-                    Reassign
+                    {complaint.assignedTo ? 'Reassign' : 'Assign'}
                   </Button>
                   <Button
                     variant="outline"
@@ -853,9 +853,11 @@ export default function TicketManagementPage() {
       <Dialog open={isReassigning} onOpenChange={setIsReassigning}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reassign Ticket</DialogTitle>
+            <DialogTitle>{complaint.assignedTo ? 'Reassign Ticket' : 'Assign Ticket'}</DialogTitle>
             <DialogDescription>
-              Select a user to reassign this ticket to.
+              {complaint.assignedTo 
+                ? 'Select a user to reassign this ticket to.'
+                : 'Select a user to assign this ticket to.'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -919,10 +921,10 @@ export default function TicketManagementPage() {
               {reassignMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Reassigning...
+                  {complaint.assignedTo ? 'Reassigning...' : 'Assigning...'}
                 </>
               ) : (
-                'Reassign'
+                complaint.assignedTo ? 'Reassign' : 'Assign'
               )}
             </Button>
           </DialogFooter>
