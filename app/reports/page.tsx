@@ -111,13 +111,9 @@ export default function ReportsPage() {
     date.to?.toISOString().split('T')[0] || ''
   );
 
-  if (!reportData) {
-    return <ReportsSkeleton />;
-  }
-
   return (
     <div className="container mx-auto py-8 space-y-8">
-      {/* Header */}
+      {/* Header - Always visible */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold">Reports</h1>
@@ -137,7 +133,8 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {/* Content Area - Shows skeleton or data */}
+      {isLoading || !reportData ? (
         <ReportsSkeleton />
       ) : (
         <>
