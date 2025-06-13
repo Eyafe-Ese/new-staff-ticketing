@@ -1,0 +1,36 @@
+name: Build Next.js App
+
+on:
+  push:
+    branches: [main]    # Triggers when you push to main
+  pull_request:
+    branches: [main]    # Also runs on PRs targeting main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'    # Use your app’s Node version
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run build
+        run: npm run build
+
+      - name: Run tests
+        run: npm test    # Optional — only if you have tests
+
+      # Optional: Upload build output as an artifact
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextjs-build
+          path: .next/
