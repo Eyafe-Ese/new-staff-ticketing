@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "setup-env": "node setup-env.js",
-    "setup": "npm run setup-env && npm install"
+    "setup": "npm run setup-env && npm install",
+    "test": "echo \"No tests implemented yet\""
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -55,4 +56,7 @@
     "tw-animate-css": "^1.2.8",
     "typescript": "^5"
   }
+
+
 }
+
